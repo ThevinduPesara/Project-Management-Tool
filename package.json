@@ -1,0 +1,14 @@
+{
+    "name": "itpm-1",
+    "version": "1.0.0",
+    "scripts": {
+        "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1"
+    }
+}
