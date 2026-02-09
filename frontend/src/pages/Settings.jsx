@@ -1,10 +1,21 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut } from 'lucide-react';
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Calendar } from 'lucide-react';
+import calendarService from '../api/calendarService';
 
 const Settings = () => {
     const { user, logout } = useContext(AuthContext);
+
+    const handleCalendarSync = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await calendarService.syncDeadlines(token);
+            alert(res.message);
+        } catch (error) {
+            alert('Failed to sync calendar');
+        }
+    };
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -62,7 +73,21 @@ const Settings = () => {
                     </div>
                 </motion.div>
 
-                {/* Other Settings Placeholder sections */}
+                {/* Integrations Section */}
+                <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Integrations</h3>
+                    <div
+                        onClick={handleCalendarSync}
+                        style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', padding: '1rem', background: 'var(--bg-main)', borderRadius: '12px' }}
+                    >
+                        <Calendar size={24} color="#4285F4" />
+                        <div>
+                            <h4 style={{ fontWeight: 'bold' }}>Google Calendar</h4>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sync your task deadlines automatically.</p>
+                        </div>
+                        <button className="btn-primary" style={{ marginLeft: 'auto', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Sync Now</button>
+                    </div>
+                </div>
                 <SettingRow icon={Bell} title="Notifications" desc="Manage how you receive updates and reminders." />
                 <SettingRow icon={Shield} title="Privacy & Security" desc="Control your account security and data visibility." />
                 <SettingRow icon={SettingsIcon} title="General Preferences" desc="Adjust language, theme, and region settings." />

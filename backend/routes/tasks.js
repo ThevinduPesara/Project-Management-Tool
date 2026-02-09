@@ -3,11 +3,13 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Task = require('../models/Task');
 const Group = require('../models/Group');
+const notificationController = require('../controllers/notificationController');
 
 // Create task
 router.post('/', auth, async (req, res) => {
     try {
         const { title, description, groupId, deadline, assignedTo, type } = req.body;
+        console.log('Task creation request received:', { title, groupId, assignedTo });
 
         // check if user is in group
         const group = await Group.findById(groupId);
@@ -26,8 +28,22 @@ router.post('/', auth, async (req, res) => {
         });
 
         await newTask.save();
+        // Removed duplicate save
+        // await newTask.save(); 
+
+        if (assignedTo) {
+            console.log(`Triggering notification for task assignment to: ${assignedTo}`);
+            await notificationController.createNotification(
+                assignedTo,
+                `You have been assigned to a new task: ${title}`
+            );
+        } else {
+            console.log('No assignee, skipping notification.');
+        }
+
         res.json(newTask);
     } catch (err) {
+        console.error('Task creation error:', err);
         res.status(500).send('Server Error');
     }
 });
@@ -66,6 +82,14 @@ router.patch('/:id/assign', auth, async (req, res) => {
 
         task.assignedTo = assignedTo;
         await task.save();
+
+        if (assignedTo) {
+            await notificationController.createNotification(
+                assignedTo,
+                `You have been assigned to task: ${task.title}`
+            );
+        }
+
         res.json(task);
     } catch (err) {
         res.status(500).send('Server Error');

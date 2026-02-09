@@ -79,6 +79,28 @@ const Dashboard = () => {
                 <StatsCard title="Overdue" value={summary?.overdueTasks || 0} icon={AlertCircle} color="#ef4444" />
             </div>
 
+            {/* Overall Progress */}
+            {summary && (
+                <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <h3 style={{ fontWeight: 'bold' }}>Overall Project Progress</h3>
+                            <span style={{ fontWeight: 'bold', color: 'var(--primary-light)' }}>
+                                {summary.totalTasks > 0 ? Math.round(((summary.totalTasks - summary.inProgressTasks - summary.overdueTasks) / summary.totalTasks) * 100) : 0}%
+                            </span>
+                        </div>
+                        <div style={{ height: '10px', background: 'var(--bg-main)', borderRadius: '5px', overflow: 'hidden' }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${summary.totalTasks > 0 ? ((summary.totalTasks - summary.inProgressTasks - summary.overdueTasks) / summary.totalTasks) * 100 : 0}%` }}
+                                transition={{ duration: 1 }}
+                                style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary-light), var(--secondary))' }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Lower Section */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '2rem', flex: 1 }}>
                 <div className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>

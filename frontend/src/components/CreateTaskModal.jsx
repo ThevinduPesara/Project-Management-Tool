@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, User, AlignLeft, BarChart } from 'lucide-react';
+import { X, Calendar, User, AlignLeft, BarChart, Sparkles } from 'lucide-react';
+import aiService from '../api/aiService';
 
 const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) => {
     const [taskData, setTaskData] = useState({
@@ -12,6 +13,30 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
         type: 'Task'
     });
     const [loading, setLoading] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+
+    const handleAiEstimate = async () => {
+        if (!taskData.title) return alert('Please enter a title first');
+        setAiLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await aiService.estimateDifficulty({
+                title: taskData.title,
+                description: taskData.description
+            }, token);
+
+            console.log("AI Response:", res);
+            // Assuming response has { difficulty: "Medium", emoji: "😐", estimatedHours: 4 }
+            alert(`AI Estimate: ${res.difficulty} ${res.emoji}`);
+            // You could auto-fill difficulty field if it existed in the form, 
+            // but for now we just show it.
+        } catch (error) {
+            console.error(error);
+            alert('AI Estimation failed');
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -71,6 +96,29 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
                                 style={{ width: '100%' }}
                             />
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={handleAiEstimate}
+                            disabled={aiLoading}
+                            style={{
+                                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.5rem 1rem',
+                                color: 'white',
+                                fontSize: '0.85rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                width: 'fit-content',
+                                cursor: 'pointer',
+                                marginTop: '-1rem'
+                            }}
+                        >
+                            <Sparkles size={14} />
+                            {aiLoading ? 'Analyzing...' : 'AI Estimate Difficulty'}
+                        </button>
 
                         <div>
                             <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Description</label>

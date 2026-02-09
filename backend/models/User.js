@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['leader', 'member'], default: 'member' },
     skills: [String],
     githubUsername: String,
+    contributionScore: { type: Number, default: 0 },
+    pushNotificationsEnabled: { type: Boolean, default: true },
+    emailNotificationsEnabled: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
 

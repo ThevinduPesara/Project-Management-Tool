@@ -7,6 +7,8 @@ const groupRoutes = require('./routes/groups');
 const taskRoutes = require('./routes/tasks');
 const dashboardRoutes = require('./routes/dashboard');
 const aiRoutes = require('./routes/ai');
+const notificationRoutes = require('./routes/notification');
+const calendarRoutes = require('./routes/calendar');
 
 const app = express();
 
@@ -26,6 +28,8 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Database Connection
 const MONGODB_URI = process.env.MONGODB_URI;

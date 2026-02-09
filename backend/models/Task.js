@@ -16,6 +16,8 @@ const taskSchema = new mongoose.Schema({
     }],
     difficultyEmoji: String, // From OpenAI API later
     difficultyLevel: String, // Easy, Medium, Hard
+    estimatedHours: Number,
+    completedAt: Date,
     createdAt: { type: Date, default: Date.now }
 });
 
