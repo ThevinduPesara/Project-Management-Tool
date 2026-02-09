@@ -16,6 +16,7 @@ const AIPlanner = ({ groupId, onPlanApplied }) => {
         const formData = new FormData();
         if (file) formData.append('file', file);
         formData.append('text', text);
+        formData.append('groupId', groupId);
 
         try {
             const res = await api.post('/ai/analyze', formData, {
@@ -124,6 +125,12 @@ const AIPlanner = ({ groupId, onPlanApplied }) => {
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>{task.title}</h4>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{task.description}</p>
+                                    {task.assignedToName && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--primary-light)', fontSize: '0.8rem' }}>
+                                            <User size={14} />
+                                            Assigned to: {task.assignedToName}
+                                        </div>
+                                    )}
                                 </div>
                                 <div style={{ textAlign: 'right', minWidth: '120px' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>TYPE</div>
