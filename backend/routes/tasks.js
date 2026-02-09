@@ -9,7 +9,6 @@ const notificationController = require('../controllers/notificationController');
 router.post('/', auth, async (req, res) => {
     try {
         const { title, description, groupId, deadline, assignedTo, type } = req.body;
-        console.log('Task creation request received:', { title, groupId, assignedTo });
 
         // check if user is in group
         const group = await Group.findById(groupId);
@@ -32,13 +31,10 @@ router.post('/', auth, async (req, res) => {
         // await newTask.save(); 
 
         if (assignedTo) {
-            console.log(`Triggering notification for task assignment to: ${assignedTo}`);
             await notificationController.createNotification(
                 assignedTo,
                 `You have been assigned to a new task: ${title}`
             );
-        } else {
-            console.log('No assignee, skipping notification.');
         }
 
         res.json(newTask);

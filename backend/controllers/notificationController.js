@@ -28,15 +28,9 @@ const sendEmail = async (to, subject, text) => {
 
 exports.getNotifications = async (req, res) => {
     try {
-        // req.user.id is used in tasks.js, let's verify if auth middleware sets userId or id.
-        // Assuming req.user.id based on typical JWT payloads, but sticking to existing code if possible.
-        // However, tasks.js usage suggests req.user.id.
-        // The original code had req.user.userId. I'll keep it as is for now to avoid breaking getNotifications if it was working?
-        // Actually, if I look at tasks.js (step 13): `if (!group.members.includes(req.user.id))`
-        // But notificationController (step 16) used `req.user.userId`.
-        // This discrepancy is suspicious. But I will focus on createNotification first.
         const notifications = await Notification.find({ user: req.user.id || req.user.userId })
             .sort({ createdAt: -1 });
+
         res.json(notifications);
     } catch (error) {
         console.error('getNotifications error:', error);
