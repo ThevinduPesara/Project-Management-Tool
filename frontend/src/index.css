@@ -135,7 +135,7 @@ button {
 /* Kanban Board Styles */
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   width: 100%;
   height: calc(100vh - 300px);

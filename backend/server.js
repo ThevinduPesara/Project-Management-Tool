@@ -30,6 +30,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/qa', require('./routes/qa'));
 
 // Database Connection
 const MONGODB_URI = process.env.MONGODB_URI;
