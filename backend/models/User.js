@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema({
     contributionScore: { type: Number, default: 0 },
     pushNotificationsEnabled: { type: Boolean, default: true },
     emailNotificationsEnabled: { type: Boolean, default: true },
+    googleAccessToken: String,
+    googleRefreshToken: String,
+    googleTokenExpiry: Date,
     createdAt: { type: Date, default: Date.now }
 });
 

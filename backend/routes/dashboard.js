@@ -51,13 +51,33 @@ router.get('/summary', auth, async (req, res) => {
             total: stat.assigned
         }));
 
+        // 5. Recent Activity (Latest 10 status changes)
+        const recentActivityRaw = await Task.find({ group: { $in: groupIds } })
+            .select('title statusHistory group')
+            .populate('statusHistory.updatedBy', 'name')
+            .populate('group', 'name')
+            .lean();
+
+        const flattenedActivity = recentActivityRaw.reduce((acc, task) => {
+            if (!task.statusHistory || !Array.isArray(task.statusHistory)) return acc;
+
+            const history = task.statusHistory.map(h => ({
+                ...h,
+                taskTitle: task.title,
+                groupName: task.group?.name || 'Unknown Group',
+                taskId: task._id
+            }));
+            return [...acc, ...history];
+        }, []).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 10);
+
         res.json({
             activeProjects,
             totalTasks,
             inProgressTasks,
             overdueTasks,
             recentTasks,
-            teamContributions
+            teamContributions,
+            recentActivity: flattenedActivity
         });
 
     } catch (err) {

@@ -61,10 +61,24 @@ router.patch('/:id/status', auth, async (req, res) => {
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ msg: 'Task not found' });
 
+        const oldStatus = task.status;
         task.status = status;
+
+        // Add to history
+        task.statusHistory.push({
+            from: oldStatus,
+            to: status,
+            updatedBy: req.user.id
+        });
+
+        if (status === 'Done') {
+            task.completedAt = new Date();
+        }
+
         await task.save();
         res.json(task);
     } catch (err) {
+        console.error('Status update error:', err);
         res.status(500).send('Server Error');
     }
 });

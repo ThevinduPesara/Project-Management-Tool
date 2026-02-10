@@ -9,13 +9,23 @@ const Settings = () => {
 
     const handleCalendarSync = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await calendarService.syncDeadlines(token);
+            const res = await calendarService.syncDeadlines();
             alert(res.message);
         } catch (error) {
-            alert('Failed to sync calendar');
+            alert(error.response?.data?.message || 'Failed to sync calendar');
         }
     };
+
+    const handleConnect = async () => {
+        try {
+            const { url } = await calendarService.getAuthUrl();
+            window.location.href = url;
+        } catch (error) {
+            alert('Failed to get connection URL');
+        }
+    };
+
+    const isConnected = user?.googleRefreshToken || new URLSearchParams(window.location.search).get('calendar') === 'connected';
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -81,11 +91,17 @@ const Settings = () => {
                         style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', padding: '1rem', background: 'var(--bg-main)', borderRadius: '12px' }}
                     >
                         <Calendar size={24} color="#4285F4" />
-                        <div>
+                        <div style={{ flex: 1 }}>
                             <h4 style={{ fontWeight: 'bold' }}>Google Calendar</h4>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sync your task deadlines automatically.</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {isConnected ? 'Your account is connected.' : 'Sync your task deadlines automatically.'}
+                            </p>
                         </div>
-                        <button className="btn-primary" style={{ marginLeft: 'auto', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Sync Now</button>
+                        {isConnected ? (
+                            <button onClick={handleCalendarSync} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Sync Now</button>
+                        ) : (
+                            <button onClick={handleConnect} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Connect</button>
+                        )}
                     </div>
                 </div>
                 <SettingRow icon={Bell} title="Notifications" desc="Manage how you receive updates and reminders." />

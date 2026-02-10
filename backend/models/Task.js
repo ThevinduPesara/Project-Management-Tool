@@ -18,6 +18,12 @@ const taskSchema = new mongoose.Schema({
     difficultyLevel: String, // Easy, Medium, Hard
     estimatedHours: Number,
     completedAt: Date,
+    statusHistory: [{
+        from: String,
+        to: String,
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        updatedAt: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now }
 });
 

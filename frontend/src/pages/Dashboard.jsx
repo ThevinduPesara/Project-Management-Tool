@@ -11,6 +11,7 @@ import CreateGroupModal from '../components/CreateGroupModal';
 import JoinGroupModal from '../components/JoinGroupModal';
 import StatsCard from '../components/StatsCard';
 import TaskCard from '../components/TaskCard';
+import ActivityFeed from '../components/ActivityFeed';
 import TeamContributions from '../components/TeamContributions';
 import { useNavigate } from 'react-router-dom';
 
@@ -101,8 +102,8 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* Lower Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '2rem', flex: 1 }}>
+            {/* Lower Section - Original Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '2rem' }}>
                 <div className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Recent Tasks</h3>
@@ -119,6 +120,11 @@ const Dashboard = () => {
                 </div>
 
                 <TeamContributions members={summary?.teamContributions || []} />
+            </div>
+
+            {/* Tracking Layer - Activity Feed */}
+            <div style={{ marginTop: '1rem' }}>
+                <ActivityFeed activities={summary?.recentActivity || []} />
             </div>
 
             <CreateGroupModal

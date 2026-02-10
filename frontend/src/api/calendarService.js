@@ -1,14 +1,16 @@
-import axios from 'axios';
+import api from './axios';
 
-const API_URL = 'http://localhost:5000/api/calendar';
+const syncDeadlines = async () => {
+    const response = await api.post('/calendar/sync');
+    return response.data;
+};
 
-const syncDeadlines = async (token) => {
-    const response = await axios.post(`${API_URL}/sync`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+const getAuthUrl = async () => {
+    const response = await api.get('/calendar/auth-url');
     return response.data;
 };
 
 export default {
-    syncDeadlines
+    syncDeadlines,
+    getAuthUrl
 };
