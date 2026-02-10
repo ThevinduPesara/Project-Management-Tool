@@ -132,6 +132,19 @@ button {
   background: #94a3b8;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
 /* Kanban Board Styles */
 .kanban-board {
   display: grid;

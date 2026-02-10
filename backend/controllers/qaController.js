@@ -37,9 +37,17 @@ exports.verifyTaskWithAI = async (req, res) => {
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
+        let text = response.text();
+        // Remove markdown code blocks if present
+        let jsonStr = text.replace(/```json|```/g, '').trim();
 
-        const jsonStr = text.replace(/```json|```/g, '').trim();
+        // Find the first { and last } to handle extra text
+        const firstBracket = jsonStr.indexOf('{');
+        const lastBracket = jsonStr.lastIndexOf('}');
+        if (firstBracket !== -1 && lastBracket !== -1) {
+            jsonStr = jsonStr.substring(firstBracket, lastBracket + 1);
+        }
+
         const verification = JSON.parse(jsonStr);
 
         // Update task with submission note and feedback

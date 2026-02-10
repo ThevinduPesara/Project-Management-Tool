@@ -88,12 +88,18 @@ exports.analyzeProject = async (req, res) => {
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
+        let text = response.text();
+        let jsonStr = text.replace(/```json|```/g, '').trim();
 
-        const jsonStr = text.replace(/```json|```/g, '').trim();
-        const plan = JSON.parse(jsonStr);
+        const firstBracket = jsonStr.indexOf('['); // Changed to '[' for array parsing
+        const lastBracket = jsonStr.lastIndexOf(']'); // Changed to ']' for array parsing
+        if (firstBracket !== -1 && lastBracket !== -1) {
+            jsonStr = jsonStr.substring(firstBracket, lastBracket + 1);
+        }
 
-        res.json(plan);
+        const analysis = JSON.parse(jsonStr);
+
+        res.json(analysis); // Changed from 'plan' to 'analysis'
 
     } catch (err) {
         console.error('AI Analysis Error:', err);
