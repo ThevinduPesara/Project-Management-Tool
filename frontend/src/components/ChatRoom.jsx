@@ -6,7 +6,7 @@ import MessageInput from './MessageInput';
 import { motion } from 'framer-motion';
 import { MessageSquare, WifiOff } from 'lucide-react';
 
-const ChatRoom = ({ groupId, currentUserId }) => {
+const ChatRoom = ({ groupId, currentUserId, members, leader }) => {
     const { socket, connected } = useSocket();
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -71,19 +71,25 @@ const ChatRoom = ({ groupId, currentUserId }) => {
             }
         };
 
+        const handleMessageUpdated = (updatedMessage) => {
+            setMessages(prev => prev.map(m => m._id === updatedMessage._id ? updatedMessage : m));
+        };
+
         socket.on('new-message', handleNewMessage);
         socket.on('user-typing', handleUserTyping);
+        socket.on('message-updated', handleMessageUpdated);
 
         // Cleanup
         return () => {
             socket.emit('leave-group', groupId);
             socket.off('new-message', handleNewMessage);
             socket.off('user-typing', handleUserTyping);
+            socket.off('message-updated', handleMessageUpdated);
         };
     }, [socket, connected, groupId, currentUserId]);
 
     // Send message handler
-    const handleSendMessage = useCallback((content) => {
+    const handleSendMessage = useCallback((content, attachments = []) => {
         if (!socket || !connected) {
             setError('Not connected to chat server');
             return;
@@ -91,7 +97,8 @@ const ChatRoom = ({ groupId, currentUserId }) => {
 
         socket.emit('send-message', {
             groupId,
-            content
+            content,
+            attachments
         });
     }, [socket, connected, groupId]);
 
@@ -102,6 +109,17 @@ const ChatRoom = ({ groupId, currentUserId }) => {
         socket.emit('typing', {
             groupId,
             isTyping
+        });
+    }, [socket, connected, groupId]);
+
+    // Handle reaction
+    const handleReact = useCallback((messageId, emoji) => {
+        if (!socket || !connected) return;
+
+        socket.emit('message-react', {
+            messageId,
+            emoji,
+            groupId
         });
     }, [socket, connected, groupId]);
 
@@ -185,6 +203,8 @@ const ChatRoom = ({ groupId, currentUserId }) => {
                         messages={messages}
                         currentUserId={currentUserId}
                         typingUsers={typingUsers}
+                        members={members}
+                        onReact={handleReact}
                     />
                 )}
             </div>
@@ -205,7 +225,9 @@ const ChatRoom = ({ groupId, currentUserId }) => {
                 )}
                 <MessageInput
                     onSendMessage={handleSendMessage}
+                    onTyping={handleTyping}
                     disabled={!connected}
+                    members={members}
                 />
             </div>
         </motion.div>

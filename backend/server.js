@@ -16,6 +16,7 @@ const calendarRoutes = require('./routes/calendar');
 const chatRoutes = require('./routes/chat');
 
 const Message = require('./models/Message');
+const { extractMentions } = require('./utils/chatUtils');
 
 const app = express();
 const server = http.createServer(app);
@@ -48,6 +49,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/qa', require('./routes/qa'));
 app.use('/api/chat', chatRoutes);
+app.use('/api/files', require('./routes/files'));
+
+// Static files (uploads)
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Socket.io authentication middleware
 io.use((socket, next) => {
@@ -97,18 +103,29 @@ io.on('connection', (socket) => {
     // Send a message
     socket.on('send-message', async (data) => {
         try {
-            const { groupId, content } = data;
+            const { groupId, content, attachments = [] } = data;
+
+            // Validation: Must have either content or attachments
+            if (!content?.trim() && attachments.length === 0) {
+                return socket.emit('error', { message: 'Message cannot be empty' });
+            }
+
+            // Extract mentions
+            const mentions = await extractMentions(content || '', groupId);
 
             // Create and save message
             const message = new Message({
                 sender: socket.userId,
                 group: groupId,
-                content: content.trim(),
+                content: (content || '').trim(),
+                mentions: mentions,
+                attachments: attachments,
                 readBy: [socket.userId]
             });
 
             await message.save();
             await message.populate('sender', 'name email');
+            await message.populate('mentions', 'name email');
 
             // Broadcast to all users in the group (including sender)
             io.to(groupId).emit('new-message', message);
@@ -125,6 +142,40 @@ io.on('connection', (socket) => {
             userId: socket.userId,
             isTyping
         });
+    });
+
+    // Reaction to a message
+    socket.on('message-react', async (data) => {
+        try {
+            const { messageId, emoji, groupId } = data;
+            const message = await Message.findById(messageId);
+            if (!message) return;
+
+            const reactionIndex = message.reactions.findIndex(r => r.emoji === emoji);
+            if (reactionIndex !== -1) {
+                const userIndex = message.reactions[reactionIndex].users.findIndex(id => id.toString() === socket.userId.toString());
+                if (userIndex !== -1) {
+                    message.reactions[reactionIndex].users.splice(userIndex, 1);
+                    if (message.reactions[reactionIndex].users.length === 0) {
+                        message.reactions.splice(reactionIndex, 1);
+                    }
+                } else {
+                    message.reactions[reactionIndex].users.push(socket.userId);
+                }
+            } else {
+                message.reactions.push({ emoji, users: [socket.userId] });
+            }
+
+            await message.save();
+            await message.populate('sender', 'name email');
+            await message.populate('mentions', 'name email');
+            await message.populate('reactions.users', 'name');
+
+            // Broadcast the updated message to the group
+            io.to(groupId).emit('message-updated', message);
+        } catch (error) {
+            console.error('Error handling reaction:', error);
+        }
     });
 
     // Handle disconnection

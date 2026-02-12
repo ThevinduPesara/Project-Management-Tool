@@ -55,4 +55,26 @@ router.get('/my-groups', auth, async (req, res) => {
     }
 });
 
+// Update GitHub repository
+router.put('/:groupId/github', auth, async (req, res) => {
+    try {
+        const { githubRepo } = req.body;
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        // Only leader can update repo
+        if (group.leader.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
+        group.githubRepo = githubRepo;
+        await group.save();
+        res.json(group);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

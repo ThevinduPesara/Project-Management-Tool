@@ -56,4 +56,30 @@ router.get('/me', auth, async (req, res) => {
     }
 });
 
+// Update profile
+router.put('/profile', auth, async (req, res) => {
+    try {
+        console.log('Profile update request received:', req.body);
+        console.log('User ID from token:', req.user.id);
+
+        const { name, githubUsername } = req.body;
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            console.error('User not found in DB:', req.user.id);
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        if (name) user.name = name;
+        if (githubUsername !== undefined) user.githubUsername = githubUsername;
+
+        await user.save();
+        console.log('Profile updated successfully for:', user.email);
+        res.json(user);
+    } catch (err) {
+        console.error('Profile Update Error:', err.message);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
+    }
+});
+
 module.exports = router;

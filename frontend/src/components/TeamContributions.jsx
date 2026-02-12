@@ -29,7 +29,22 @@ const TeamContributions = ({ members }) => {
                                     {member?.name ? member.name.split(' ').map(n => n[0]).join('') : 'U'}
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{member.name}</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{member.name}</div>
+                                        {member.commits !== undefined && member.commits > 0 && (
+                                            <div style={{
+                                                fontSize: '0.7rem',
+                                                background: 'rgba(56, 189, 248, 0.1)',
+                                                color: '#38bdf8',
+                                                padding: '2px 6px',
+                                                borderRadius: '10px',
+                                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                                fontWeight: '600'
+                                            }}>
+                                                {member.commits} commits
+                                            </div>
+                                        )}
+                                    </div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                         {member.completed} of {member.total} tasks completed
                                     </div>

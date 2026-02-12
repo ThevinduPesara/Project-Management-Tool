@@ -1,11 +1,37 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import api from '../api/axios';
 import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Calendar } from 'lucide-react';
 import calendarService from '../api/calendarService';
 
 const Settings = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout, refreshUser } = useContext(AuthContext);
+    const [name, setName] = React.useState(user?.name || '');
+    const [githubUsername, setGithubUsername] = React.useState(user?.githubUsername || '');
+    const [saving, setSaving] = React.useState(false);
+
+    React.useEffect(() => {
+        if (user) {
+            setName(user.name || '');
+            setGithubUsername(user.githubUsername || '');
+        }
+    }, [user]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await api.put('/auth/profile', { name, githubUsername });
+            await refreshUser();
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Profile update error:', error);
+            const msg = error.response?.data?.msg || error.response?.data?.message || 'Failed to update profile';
+            alert(`Error: ${msg}`);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleCalendarSync = async () => {
         try {
@@ -71,16 +97,47 @@ const Settings = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Full Name</label>
-                            <input type="text" className="glass-input" defaultValue={user?.name} style={{ width: '100%' }} />
+                            <input
+                                type="text"
+                                className="glass-input"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                style={{ width: '100%' }}
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Email Address</label>
                             <input type="email" className="glass-input" defaultValue={user?.email} disabled style={{ width: '100%', opacity: 0.7 }} />
                         </div>
                     </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>GitHub Username</label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>github.com/</span>
+                            <input
+                                type="text"
+                                className="glass-input"
+                                value={githubUsername}
+                                onChange={(e) => setGithubUsername(e.target.value)}
+                                placeholder="username"
+                                style={{ flex: 1 }}
+                            />
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Used to track your code contributions.</p>
+                    </div>
+
+                    <button
+                        onClick={handleSave}
+                        className="btn-primary"
+                        disabled={saving}
+                        style={{ width: '100%', padding: '0.75rem' }}
+                    >
+                        {saving ? 'Saving...' : 'Save Profile Changes'}
+                    </button>
                 </motion.div>
 
                 {/* Integrations Section */}

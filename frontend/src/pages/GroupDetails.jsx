@@ -43,6 +43,16 @@ const GroupDetails = () => {
         fetchDetails();
     }, [groupId]);
 
+    const updateGithubRepo = async (githubRepo) => {
+        try {
+            await api.put(`/groups/${groupId}/github`, { githubRepo });
+            fetchDetails();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update GitHub repository');
+        }
+    };
+
     const handleStatusChange = async (taskId, newStatus) => {
         try {
             await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
@@ -66,6 +76,47 @@ const GroupDetails = () => {
                     <div>
                         <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{group.name}</h1>
                         <p style={{ color: 'var(--text-dim)' }}>{group.description}</p>
+
+                        {/* GitHub Repo Link */}
+                        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {group.githubRepo ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-light)', fontSize: '0.9rem' }}>
+                                    <span style={{ opacity: 0.7 }}>🔗</span>
+                                    <a
+                                        href={`https://github.com/${group.githubRepo}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'inherit', textDecoration: 'none', fontWeight: '500' }}
+                                    >
+                                        github.com/{group.githubRepo}
+                                    </a>
+                                    {group.leader === currentUserId && (
+                                        <button
+                                            onClick={() => {
+                                                const repo = prompt('Enter GitHub Repo (owner/repo):', group.githubRepo);
+                                                if (repo !== null) updateGithubRepo(repo);
+                                            }}
+                                            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.75rem' }}
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                group.leader === currentUserId && (
+                                    <button
+                                        onClick={() => {
+                                            const repo = prompt('Enter GitHub Repo (owner/repo):');
+                                            if (repo) updateGithubRepo(repo);
+                                        }}
+                                        className="btn-outline"
+                                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                                    >
+                                        Link GitHub Repo
+                                    </button>
+                                )
+                            )}
+                        </div>
                     </div>
                     <div className="glass-card" style={{ padding: '1rem', minWidth: '250px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -144,7 +195,12 @@ const GroupDetails = () => {
             ) : activeTab === 'planner' ? (
                 <AIPlanner groupId={groupId} onPlanApplied={() => { setActiveTab('board'); fetchDetails(); }} />
             ) : (
-                <ChatRoom groupId={groupId} currentUserId={currentUserId} />
+                <ChatRoom
+                    groupId={groupId}
+                    currentUserId={currentUserId}
+                    members={group.members}
+                    leader={group.leader}
+                />
             )}
 
             <CreateTaskModal

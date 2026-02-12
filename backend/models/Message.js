@@ -13,9 +13,24 @@ const messageSchema = new mongoose.Schema({
     },
     content: {
         type: String,
-        required: true,
+        required: false,
         trim: true
     },
+    mentions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    reactions: [{
+        emoji: { type: String, required: true },
+        users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    }],
+    attachments: [{
+        filename: String,
+        originalName: String,
+        mimeType: String,
+        size: Number,
+        url: String
+    }],
     readBy: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -30,5 +45,6 @@ const messageSchema = new mongoose.Schema({
 
 // Index for efficient querying
 messageSchema.index({ group: 1, timestamp: -1 });
+messageSchema.index({ mentions: 1, group: 1 });
 
 module.exports = mongoose.model('Message', messageSchema);

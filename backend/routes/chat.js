@@ -18,4 +18,10 @@ router.patch('/:groupId/read', chatController.markAsRead);
 // Get unread count
 router.get('/:groupId/unread', chatController.getUnreadCount);
 
+// Get messages where current user is mentioned
+router.get('/:groupId/mentions', chatController.getMentions);
+
+// Toggle reaction on a message
+router.post('/messages/:messageId/react', chatController.toggleReaction);
+
 module.exports = router;
