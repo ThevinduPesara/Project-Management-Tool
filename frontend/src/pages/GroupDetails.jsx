@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, MessageCircle } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import CreateTaskModal from '../components/CreateTaskModal';
 import AIPlanner from '../components/AIPlanner';
+import ChatRoom from '../components/ChatRoom';
 
 const GroupDetails = () => {
     const { groupId } = useParams();
@@ -14,6 +15,7 @@ const GroupDetails = () => {
     const [loading, setLoading] = useState(true);
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('board');
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const fetchDetails = async () => {
         try {
@@ -23,6 +25,13 @@ const GroupDetails = () => {
 
             const taskRes = await api.get(`/tasks/group/${groupId}`);
             setTasks(taskRes.data);
+
+            // Get current user ID from token
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                setCurrentUserId(payload.user.id);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -112,6 +121,12 @@ const GroupDetails = () => {
                     >
                         <Sparkles size={18} color="var(--primary-light)" /> AI Planner
                     </h2>
+                    <h2
+                        onClick={() => setActiveTab('chat')}
+                        style={{ fontSize: '1.25rem', borderBottom: activeTab === 'chat' ? '2px solid var(--primary-light)' : 'none', paddingBottom: '0.5rem', cursor: 'pointer', color: activeTab === 'chat' ? 'white' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <MessageCircle size={18} color="var(--primary-light)" /> Chat
+                    </h2>
                 </div>
                 {activeTab === 'board' && (
                     <button
@@ -126,8 +141,10 @@ const GroupDetails = () => {
 
             {activeTab === 'board' ? (
                 <KanbanBoard tasks={tasks} onStatusChange={handleStatusChange} />
-            ) : (
+            ) : activeTab === 'planner' ? (
                 <AIPlanner groupId={groupId} onPlanApplied={() => { setActiveTab('board'); fetchDetails(); }} />
+            ) : (
+                <ChatRoom groupId={groupId} currentUserId={currentUserId} />
             )}
 
             <CreateTaskModal
