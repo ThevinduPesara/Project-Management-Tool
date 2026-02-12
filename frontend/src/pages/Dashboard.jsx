@@ -13,6 +13,7 @@ import StatsCard from '../components/StatsCard';
 import TaskCard from '../components/TaskCard';
 import ActivityFeed from '../components/ActivityFeed';
 import TeamContributions from '../components/TeamContributions';
+import BurndownChart from '../components/BurndownChart';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -20,25 +21,35 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+    const [groups, setGroups] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState('');
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchSummary = async () => {
+        const fetchDashboardData = async () => {
             try {
-                const res = await api.get('/dashboard/summary');
-                console.log('Dashboard summary data:', res.data);
-                setSummary(res.data);
+                const [summaryRes, groupsRes] = await Promise.all([
+                    api.get('/dashboard/summary'),
+                    api.get('/groups/my-groups')
+                ]);
+
+                setSummary(summaryRes.data);
+                setGroups(groupsRes.data);
+                if (groupsRes.data.length > 0) {
+                    setSelectedGroup(groupsRes.data[0]._id);
+                }
             } catch (err) {
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchSummary();
+        fetchDashboardData();
     }, []);
 
     if (loading) return (
+        // ... loading UI
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)' }}>
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ color: 'var(--primary-light)' }}>
                 <Clock size={40} />
@@ -80,12 +91,35 @@ const Dashboard = () => {
                 <StatsCard title="Overdue" value={summary?.overdueTasks || 0} icon={AlertCircle} color="#ef4444" />
             </div>
 
+            {/* Burndown Analysis Section */}
+            {groups.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Project Analytics</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Select Project:</label>
+                            <select
+                                className="glass-input"
+                                value={selectedGroup}
+                                onChange={(e) => setSelectedGroup(e.target.value)}
+                                style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)' }}
+                            >
+                                {groups.map(g => (
+                                    <option key={g._id} value={g._id}>{g.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    {selectedGroup && <BurndownChart groupId={selectedGroup} />}
+                </div>
+            )}
+
             {/* Overall Progress */}
             {summary && (
                 <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <h3 style={{ fontWeight: 'bold' }}>Overall Project Progress</h3>
+                            <h3 style={{ fontWeight: 'bold' }}>Aggregated Completion Rate</h3>
                             <span style={{ fontWeight: 'bold', color: 'var(--primary-light)' }}>
                                 {summary.totalTasks > 0 ? Math.round(((summary.totalTasks - summary.inProgressTasks - summary.overdueTasks) / summary.totalTasks) * 100) : 0}%
                             </span>

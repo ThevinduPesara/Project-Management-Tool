@@ -77,4 +77,44 @@ router.put('/:groupId/github', auth, async (req, res) => {
     }
 });
 
+// Update timeline dates
+router.put('/:groupId/timeline', auth, async (req, res) => {
+    try {
+        const { startDate, endDate } = req.body;
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        // Only leader can update timeline
+        if (group.leader.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
+        if (startDate) {
+            const sDate = new Date(startDate);
+            if (isNaN(sDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid start date format' });
+            }
+            group.startDate = sDate;
+        }
+
+        if (endDate) {
+            const eDate = new Date(endDate);
+            if (isNaN(eDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid end date format' });
+            }
+            group.endDate = eDate;
+        }
+
+        await group.save();
+        res.json(group);
+    } catch (err) {
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ msg: err.message });
+        }
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

@@ -158,4 +158,89 @@ router.get('/github/:groupId', auth, async (req, res) => {
     }
 });
 
+// Get burndown chart data for a group
+router.get('/burndown/:groupId', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.groupId);
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        const tasks = await Task.find({ group: group._id });
+
+        // Define timeline boundaries
+        const start = new Date(group.startDate || group.createdAt);
+        start.setHours(0, 0, 0, 0);
+
+        // Default to a 14-day window OR today (whichever is later) if no end date is set
+        const defaultEnd = new Date(Math.max(
+            start.getTime() + 14 * 24 * 60 * 60 * 1000,
+            Date.now()
+        ));
+        const end = new Date(group.endDate || defaultEnd);
+        end.setHours(23, 59, 59, 999);
+
+        const diffTime = end.getTime() - start.getTime();
+        const totalDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+        const data = [];
+        // Use all tasks that will eventually exist for the ideal line slope
+        const totalScope = tasks.length || 1;
+
+        for (let i = 0; i <= totalDays; i++) {
+            const currentDay = new Date(start);
+            currentDay.setDate(start.getDate() + i);
+            currentDay.setHours(23, 59, 59, 999);
+
+            // Ideal: linear drop from total task scope to 0
+            const ideal = Math.max(0, totalScope - (totalScope / totalDays) * i);
+
+            // Actual: Current tasks created minus tasks marked as 'Done' by this day
+            const tasksCreatedByDay = tasks.filter(t => new Date(t.createdAt) <= currentDay).length;
+            const tasksDoneByDay = tasks.filter(t =>
+                t.status === 'Done' &&
+                t.completedAt &&
+                new Date(t.completedAt) <= currentDay
+            ).length;
+
+            const remaining = tasksCreatedByDay - tasksDoneByDay;
+
+            // Don't show 'Actual' line for future dates (after today)
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            const isFuture = currentDay > today;
+
+            data.push({
+                date: currentDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                ideal: Number(ideal.toFixed(1)),
+                actual: isFuture ? null : remaining
+            });
+        }
+
+        // Add velocity/prediction logic
+        const completedTasks = tasks.filter(t => t.status === 'Done').length;
+        const daysPassed = Math.max(1, Math.ceil((new Date() - start) / (1000 * 60 * 60 * 24)));
+        const velocity = completedTasks / daysPassed; // Tasks per day
+        const remainingTasks = tasks.length - completedTasks;
+        const estimatedDaysToFinish = velocity > 0 ? Math.ceil(remainingTasks / velocity) : Infinity;
+
+        const predictedEndDate = new Date();
+        if (estimatedDaysToFinish !== Infinity) {
+            predictedEndDate.setDate(predictedEndDate.getDate() + estimatedDaysToFinish);
+        }
+
+        res.json({
+            timeline: data,
+            stats: {
+                velocity: Number(velocity.toFixed(2)),
+                remainingTasks,
+                predictedEndDate: estimatedDaysToFinish === Infinity ? 'Unknown' : predictedEndDate.toLocaleDateString(),
+                isOnTrack: predictedEndDate <= end
+            }
+        });
+
+    } catch (err) {
+        console.error('Burndown Error:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

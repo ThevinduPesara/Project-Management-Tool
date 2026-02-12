@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles, MessageCircle } from 'lucide-react';
+import { Plus, Sparkles, MessageCircle, TrendingDown } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import CreateTaskModal from '../components/CreateTaskModal';
 import AIPlanner from '../components/AIPlanner';
 import ChatRoom from '../components/ChatRoom';
+import BurndownChart from '../components/BurndownChart';
 
 const GroupDetails = () => {
     const { groupId } = useParams();
@@ -53,6 +54,17 @@ const GroupDetails = () => {
         }
     };
 
+    const updateTimeline = async (startDate, endDate) => {
+        try {
+            await api.put(`/groups/${groupId}/timeline`, { startDate, endDate });
+            fetchDetails();
+        } catch (err) {
+            console.error(err);
+            const msg = err.response?.data?.msg || 'Failed to update project timeline';
+            alert(msg);
+        }
+    };
+
     const handleStatusChange = async (taskId, newStatus) => {
         try {
             await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
@@ -64,6 +76,8 @@ const GroupDetails = () => {
 
     if (loading) return <div style={{ color: 'white', padding: '2rem' }}>Loading details...</div>;
     if (!group) return <div style={{ color: 'white', padding: '2rem' }}>Group not found.</div>;
+
+    const isLeader = group.leader === currentUserId;
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -77,47 +91,80 @@ const GroupDetails = () => {
                         <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{group.name}</h1>
                         <p style={{ color: 'var(--text-dim)' }}>{group.description}</p>
 
-                        {/* GitHub Repo Link */}
-                        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {group.githubRepo ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-light)', fontSize: '0.9rem' }}>
-                                    <span style={{ opacity: 0.7 }}>🔗</span>
-                                    <a
-                                        href={`https://github.com/${group.githubRepo}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: 'inherit', textDecoration: 'none', fontWeight: '500' }}
-                                    >
-                                        github.com/{group.githubRepo}
-                                    </a>
-                                    {group.leader === currentUserId && (
+                        <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+                            {/* GitHub Repo Link */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-light)', fontSize: '0.9rem' }}>
+                                <span style={{ opacity: 0.7 }}>🔗</span>
+                                {group.githubRepo ? (
+                                    <>
+                                        <a
+                                            href={`https://github.com/${group.githubRepo}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'inherit', textDecoration: 'none', fontWeight: '500' }}
+                                        >
+                                            github.com/{group.githubRepo}
+                                        </a>
+                                        {isLeader && (
+                                            <button
+                                                onClick={() => {
+                                                    const repo = prompt('Enter GitHub Repo (owner/repo):', group.githubRepo);
+                                                    if (repo !== null) updateGithubRepo(repo);
+                                                }}
+                                                style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.75rem' }}
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
+                                    isLeader && (
                                         <button
                                             onClick={() => {
-                                                const repo = prompt('Enter GitHub Repo (owner/repo):', group.githubRepo);
-                                                if (repo !== null) updateGithubRepo(repo);
+                                                const repo = prompt('Enter GitHub Repo (owner/repo):');
+                                                if (repo) updateGithubRepo(repo);
                                             }}
-                                            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.75rem' }}
+                                            style={{ background: 'none', border: 'none', color: 'var(--primary-light)', cursor: 'pointer', fontWeight: 'bold' }}
                                         >
-                                            Edit
+                                            + Link GitHub
                                         </button>
-                                    )}
-                                </div>
-                            ) : (
-                                group.leader === currentUserId && (
+                                    )
+                                )}
+                            </div>
+
+                            {/* Timeline Dates */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                <span style={{ opacity: 0.7 }}>📅</span>
+                                <span>
+                                    {new Date(group.startDate).toLocaleDateString()} - {group.endDate ? new Date(group.endDate).toLocaleDateString() : 'Set Deadline'}
+                                </span>
+                                {isLeader && (
                                     <button
                                         onClick={() => {
-                                            const repo = prompt('Enter GitHub Repo (owner/repo):');
-                                            if (repo) updateGithubRepo(repo);
+                                            const parseInput = (str) => {
+                                                if (!str) return null;
+                                                const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                                                if (match) {
+                                                    const [_, d, m, y] = match;
+                                                    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                                                }
+                                                return str;
+                                            };
+                                            const start = prompt('Enter Start Date (YYYY-MM-DD):', group.startDate.split('T')[0]);
+                                            const end = prompt('Enter Milestone/End Date (YYYY-MM-DD):', group.endDate?.split('T')[0] || '');
+                                            if (start !== null || end !== null) {
+                                                updateTimeline(parseInput(start), parseInput(end));
+                                            }
                                         }}
-                                        className="btn-outline"
-                                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                                        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.75rem' }}
                                     >
-                                        Link GitHub Repo
+                                        Edit
                                     </button>
-                                )
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
+                    {/* Member stats... */}
                     <div className="glass-card" style={{ padding: '1rem', minWidth: '250px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -167,6 +214,12 @@ const GroupDetails = () => {
                         Kanban Board
                     </h2>
                     <h2
+                        onClick={() => setActiveTab('analytics')}
+                        style={{ fontSize: '1.25rem', borderBottom: activeTab === 'analytics' ? '2px solid var(--primary-light)' : 'none', paddingBottom: '0.5rem', cursor: 'pointer', color: activeTab === 'analytics' ? 'white' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <TrendingDown size={18} color="var(--primary-light)" /> Analytics
+                    </h2>
+                    <h2
                         onClick={() => setActiveTab('planner')}
                         style={{ fontSize: '1.25rem', borderBottom: activeTab === 'planner' ? '2px solid var(--primary-light)' : 'none', paddingBottom: '0.5rem', cursor: 'pointer', color: activeTab === 'planner' ? 'white' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
@@ -192,6 +245,8 @@ const GroupDetails = () => {
 
             {activeTab === 'board' ? (
                 <KanbanBoard tasks={tasks} onStatusChange={handleStatusChange} />
+            ) : activeTab === 'analytics' ? (
+                <BurndownChart groupId={groupId} />
             ) : activeTab === 'planner' ? (
                 <AIPlanner groupId={groupId} onPlanApplied={() => { setActiveTab('board'); fetchDetails(); }} />
             ) : (

@@ -7,6 +7,8 @@ const groupSchema = new mongoose.Schema({
     leader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     inviteCode: { type: String, unique: true, required: true },
+    startDate: { type: Date, default: Date.now },
+    endDate: Date, // Project deadline/milestone
     createdAt: { type: Date, default: Date.now }
 });
 
