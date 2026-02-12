@@ -62,7 +62,7 @@ router.put('/profile', auth, async (req, res) => {
         console.log('Profile update request received:', req.body);
         console.log('User ID from token:', req.user.id);
 
-        const { name, githubUsername } = req.body;
+        const { name, githubUsername, emailDigestEnabled, emailDigestFrequency } = req.body;
         const user = await User.findById(req.user.id);
 
         if (!user) {
@@ -72,12 +72,44 @@ router.put('/profile', auth, async (req, res) => {
 
         if (name) user.name = name;
         if (githubUsername !== undefined) user.githubUsername = githubUsername;
+        if (emailDigestEnabled !== undefined) user.emailDigestEnabled = emailDigestEnabled;
+        if (emailDigestFrequency) user.emailDigestFrequency = emailDigestFrequency;
 
         await user.save();
         console.log('Profile updated successfully for:', user.email);
         res.json(user);
     } catch (err) {
         console.error('Profile Update Error:', err.message);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
+    }
+});
+
+// Test Digest Email
+router.post('/test-digest', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const { sendDailyDigest } = require('../utils/emailService');
+
+        // Sample data for testing
+        const sampleData = {
+            todoCount: 5,
+            overdueCount: 2,
+            urgentTasks: [
+                { title: 'Sample Task 1', deadline: new Date() },
+                { title: 'Sample Task 2', deadline: new Date() }
+            ]
+        };
+
+        const success = await sendDailyDigest(user, sampleData);
+        if (success) {
+            res.json({ msg: 'Test digest email sent!' });
+        } else {
+            res.status(500).json({ msg: 'Failed to send test email. Check server logs.' });
+        }
+    } catch (err) {
+        console.error('Test Digest Error:', err.message);
         res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });

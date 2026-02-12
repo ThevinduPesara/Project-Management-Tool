@@ -15,6 +15,14 @@ const notificationRoutes = require('./routes/notification');
 const calendarRoutes = require('./routes/calendar');
 const chatRoutes = require('./routes/chat');
 
+const { initSchedulers } = require('./jobs/scheduler');
+
+// Setup process to log that we're starting
+console.log('Initializing UniTask Backend Server...');
+
+// Start Schedulers
+initSchedulers();
+
 const Message = require('./models/Message');
 const { extractMentions } = require('./utils/chatUtils');
 

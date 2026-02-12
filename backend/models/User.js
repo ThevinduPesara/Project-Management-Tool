@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
     googleAccessToken: String,
     googleRefreshToken: String,
     googleTokenExpiry: Date,
+    emailDigestEnabled: { type: Boolean, default: true },
+    emailDigestFrequency: { type: String, enum: ['daily', 'weekly'], default: 'daily' },
     createdAt: { type: Date, default: Date.now }
 });
 

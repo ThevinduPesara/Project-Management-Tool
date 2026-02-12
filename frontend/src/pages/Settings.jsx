@@ -9,19 +9,29 @@ const Settings = () => {
     const { user, logout, refreshUser } = useContext(AuthContext);
     const [name, setName] = React.useState(user?.name || '');
     const [githubUsername, setGithubUsername] = React.useState(user?.githubUsername || '');
+    const [emailEnabled, setEmailEnabled] = React.useState(user?.emailDigestEnabled ?? true);
+    const [frequency, setFrequency] = React.useState(user?.emailDigestFrequency || 'daily');
     const [saving, setSaving] = React.useState(false);
+    const [sendingTest, setSendingTest] = React.useState(false);
 
     React.useEffect(() => {
         if (user) {
             setName(user.name || '');
             setGithubUsername(user.githubUsername || '');
+            setEmailEnabled(user.emailDigestEnabled ?? true);
+            setFrequency(user.emailDigestFrequency || 'daily');
         }
     }, [user]);
 
     const handleSave = async () => {
         setSaving(true);
         try {
-            await api.put('/auth/profile', { name, githubUsername });
+            await api.put('/auth/profile', {
+                name,
+                githubUsername,
+                emailDigestEnabled: emailEnabled,
+                emailDigestFrequency: frequency
+            });
             await refreshUser();
             alert('Profile updated successfully!');
         } catch (error) {
@@ -30,6 +40,18 @@ const Settings = () => {
             alert(`Error: ${msg}`);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSendTest = async () => {
+        setSendingTest(true);
+        try {
+            const res = await api.post('/auth/test-digest');
+            alert(res.data.msg);
+        } catch (error) {
+            alert(error.response?.data?.msg || 'Failed to send test email');
+        } finally {
+            setSendingTest(false);
         }
     };
 
@@ -140,6 +162,55 @@ const Settings = () => {
                     </button>
                 </motion.div>
 
+                {/* Email Digest Preferences Section */}
+                <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '0.75rem', background: 'var(--bg-main)', borderRadius: '12px', color: 'var(--primary-light)' }}>
+                            <Bell size={24} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Email Digest Notifications</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Stay updated with personalized project summaries.</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{emailEnabled ? 'Enabled' : 'Disabled'}</span>
+                            <input
+                                type="checkbox"
+                                checked={emailEnabled}
+                                onChange={(e) => setEmailEnabled(e.target.checked)}
+                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                            />
+                        </div>
+                    </div>
+
+                    {emailEnabled && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '10px' }}>
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>Frequency</label>
+                                <select
+                                    className="glass-input"
+                                    value={frequency}
+                                    onChange={(e) => setFrequency(e.target.value)}
+                                    style={{ width: '100%', padding: '0.5rem' }}
+                                >
+                                    <option value="daily">Daily Digest (8:00 AM)</option>
+                                    <option value="weekly">Weekly Wrap-up (Mon 9:00 AM)</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%' }}>
+                                <button
+                                    onClick={handleSendTest}
+                                    disabled={sendingTest}
+                                    className="btn-outline"
+                                    style={{ fontSize: '0.85rem', padding: '0.6rem 1rem' }}
+                                >
+                                    {sendingTest ? 'Sending...' : 'Send Test Email'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </div>
+
                 {/* Integrations Section */}
                 <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Integrations</h3>
@@ -155,12 +226,13 @@ const Settings = () => {
                             </p>
                         </div>
                         {isConnected ? (
-                            <button onClick={handleCalendarSync} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Sync Now</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleCalendarSync(); }} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Sync Now</button>
                         ) : (
-                            <button onClick={handleConnect} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Connect</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleConnect(); }} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Connect</button>
                         )}
                     </div>
                 </div>
+
                 <SettingRow icon={Bell} title="Notifications" desc="Manage how you receive updates and reminders." />
                 <SettingRow icon={Shield} title="Privacy & Security" desc="Control your account security and data visibility." />
                 <SettingRow icon={SettingsIcon} title="General Preferences" desc="Adjust language, theme, and region settings." />
