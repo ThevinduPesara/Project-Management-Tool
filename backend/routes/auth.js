@@ -62,7 +62,7 @@ router.put('/profile', auth, async (req, res) => {
         console.log('Profile update request received:', req.body);
         console.log('User ID from token:', req.user.id);
 
-        const { name, githubUsername, emailDigestEnabled, emailDigestFrequency } = req.body;
+        const { name, githubUsername, emailDigestEnabled, emailDigestFrequency, skills } = req.body;
         const user = await User.findById(req.user.id);
 
         if (!user) {
@@ -74,6 +74,7 @@ router.put('/profile', auth, async (req, res) => {
         if (githubUsername !== undefined) user.githubUsername = githubUsername;
         if (emailDigestEnabled !== undefined) user.emailDigestEnabled = emailDigestEnabled;
         if (emailDigestFrequency) user.emailDigestFrequency = emailDigestFrequency;
+        if (skills && Array.isArray(skills)) user.skills = skills;
 
         await user.save();
         console.log('Profile updated successfully for:', user.email);

@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 
 async function generate() {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' }); // ✅ correct
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const result = await model.generateContent("Write a short story about AI.");
         console.log(result.response.text());
     } catch (err) {

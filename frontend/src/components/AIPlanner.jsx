@@ -25,7 +25,7 @@ const AIPlanner = ({ groupId, onPlanApplied }) => {
             setPlan(res.data);
         } catch (err) {
             console.error(err);
-            const errMsg = err.response?.data?.msg || 'Make sure your API key is set in the backend and you have restarted the server.';
+            const errMsg = err.response?.data?.error || err.response?.data?.msg || 'Make sure your API key is set in the backend and you have restarted the server.';
             alert('Analysis failed: ' + errMsg);
         } finally {
             setLoading(false);

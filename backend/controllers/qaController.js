@@ -10,7 +10,7 @@ exports.verifyTaskWithAI = async (req, res) => {
         const task = await Task.findById(taskId);
         if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         const prompt = `
         You are a meticulous Quality Assurance (QA) Engineer. 

@@ -16,7 +16,8 @@ exports.estimateDifficulty = async (req, res) => {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' });
+        // Use gemini-2.5-flash as verified from available models
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
         Analyze the following task and estimate its difficulty level (Easy, Medium, Hard) and suggest an appropriate emoji.
@@ -37,7 +38,7 @@ exports.estimateDifficulty = async (req, res) => {
         res.json(analysis);
     } catch (error) {
         console.error('AI Estimation Error:', error);
-        res.status(500).json({ message: 'Failed to estimate difficulty', error: error.message });
+        res.status(500).json({ message: 'Failed to estimate difficulty', error: error.message || error.toString() });
     }
 }
 
@@ -61,10 +62,11 @@ exports.analyzeProject = async (req, res) => {
         }
 
         // Fetch group members to provide context for AI assignments
-        const group = await Group.findById(req.body.groupId).populate('members', 'name');
-        const memberNames = group ? group.members.map(m => m.name).join(', ') : 'No members found';
+        const group = await Group.findById(req.body.groupId).populate('members', 'name skills');
+        const membersWithSkills = group ? group.members.map(m => `${m.name} (Skills: ${m.skills && m.skills.length > 0 ? m.skills.join(', ') : 'Generalist'})`).join('\n') : 'No members found';
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' });
+        // Use gemini-2.5-flash for project analysis
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
         You are an expert Project Manager. Create a detailed task list for the following project description.
@@ -72,12 +74,19 @@ exports.analyzeProject = async (req, res) => {
         Project Description:
         ${projectText}
 
-        Team Members: ${memberNames}
+        Team Members and their expertise:
+        ${membersWithSkills}
+
+        Your goal is to assign tasks to team members based on their expertise. 
+        For example:
+        - Frontend tasks (UI, React, CSS) should go to members with frontend skills.
+        - Backend tasks (API, Database, Node.js) should go to members with backend skills.
+        - If multiple members fit, choose one. If no one fits, leave 'assignedToName' empty.
 
         Return ONLY a JSON array of tasks. Each task object should look like this:
         {
             "title": "Task Title",
-            "description": "Brief description of the task",
+            "description": "Brief description of the task requirements",
             "type": "Story" | "Task" | "Bug",
             "estimatedHours": Number,
             "assignedToName": "One of the team member names provided, or empty if you can't decide"
@@ -103,7 +112,7 @@ exports.analyzeProject = async (req, res) => {
 
     } catch (err) {
         console.error('AI Analysis Error:', err);
-        res.status(500).json({ msg: 'Failed to analyze project', error: err.message });
+        res.status(500).json({ msg: 'Failed to analyze project', error: err.message || err.toString() });
 
         // Cleanup if file exists and error occurred
         if (req.file && fs.existsSync(req.file.path)) {

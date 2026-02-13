@@ -2,13 +2,15 @@ import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import api from '../api/axios';
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Calendar } from 'lucide-react';
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Calendar, X, Award } from 'lucide-react';
 import calendarService from '../api/calendarService';
 
 const Settings = () => {
     const { user, logout, refreshUser } = useContext(AuthContext);
     const [name, setName] = React.useState(user?.name || '');
     const [githubUsername, setGithubUsername] = React.useState(user?.githubUsername || '');
+    const [skills, setSkills] = React.useState(user?.skills || []);
+    const [newSkill, setNewSkill] = React.useState('');
     const [emailEnabled, setEmailEnabled] = React.useState(user?.emailDigestEnabled ?? true);
     const [frequency, setFrequency] = React.useState(user?.emailDigestFrequency || 'daily');
     const [saving, setSaving] = React.useState(false);
@@ -18,6 +20,7 @@ const Settings = () => {
         if (user) {
             setName(user.name || '');
             setGithubUsername(user.githubUsername || '');
+            setSkills(user.skills || []);
             setEmailEnabled(user.emailDigestEnabled ?? true);
             setFrequency(user.emailDigestFrequency || 'daily');
         }
@@ -29,6 +32,7 @@ const Settings = () => {
             await api.put('/auth/profile', {
                 name,
                 githubUsername,
+                skills,
                 emailDigestEnabled: emailEnabled,
                 emailDigestFrequency: frequency
             });
@@ -41,6 +45,20 @@ const Settings = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const addSkill = (e) => {
+        if (e.key === 'Enter' && newSkill.trim()) {
+            e.preventDefault();
+            if (!skills.includes(newSkill.trim())) {
+                setSkills([...skills, newSkill.trim()]);
+            }
+            setNewSkill('');
+        }
+    };
+
+    const removeSkill = (skillToRemove) => {
+        setSkills(skills.filter(s => s !== skillToRemove));
     };
 
     const handleSendTest = async () => {
@@ -150,6 +168,48 @@ const Settings = () => {
                             />
                         </div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Used to track your code contributions.</p>
+                    </div>
+
+                    {/* Skills Management */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Award size={16} color="var(--primary-light)" />
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your Skills & Expertise</label>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            {skills.map(skill => (
+                                <span key={skill} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    padding: '0.4rem 0.75rem',
+                                    borderRadius: '50px',
+                                    fontSize: '0.8rem',
+                                    border: '1px solid var(--border)'
+                                }}>
+                                    {skill}
+                                    <X
+                                        size={14}
+                                        style={{ cursor: 'pointer', opacity: 0.6 }}
+                                        onClick={() => removeSkill(skill)}
+                                    />
+                                </span>
+                            ))}
+                            {skills.length === 0 && (
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>No skills added yet.</p>
+                            )}
+                        </div>
+                        <input
+                            type="text"
+                            className="glass-input"
+                            placeholder="Add a skill (e.g. React, Node.js) and press Enter"
+                            value={newSkill}
+                            onChange={(e) => setNewSkill(e.target.value)}
+                            onKeyDown={addSkill}
+                            style={{ width: '100%' }}
+                        />
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>These skills help the AI Planner assign tasks that match your expertise.</p>
                     </div>
 
                     <button
