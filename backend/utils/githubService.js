@@ -1,5 +1,9 @@
 const https = require('https');
 
+// Simple in-memory cache
+const statsCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Fetch contributor statistics from GitHub API using built-in https module
  * @param {string} repo - Format 'owner/repo'
@@ -60,10 +64,17 @@ const fetchContributors = (repo) => {
  * @returns {Promise<Object>} - Map of github usernames to total commits
  */
 const getRepoCommitStats = async (repo) => {
+    const now = Date.now();
+    const cached = statsCache.get(repo);
+
+    if (cached && (now - cached.timestamp < CACHE_TTL)) {
+        return cached.data;
+    }
+
     const contributors = await fetchContributors(repo);
 
     // If null, it means GitHub is still processing the request
-    if (!contributors) return null;
+    if (!contributors) return cached ? cached.data : null;
 
     const stats = {};
     if (Array.isArray(contributors)) {
@@ -73,6 +84,9 @@ const getRepoCommitStats = async (repo) => {
             }
         });
     }
+
+    // Update cache
+    statsCache.set(repo, { data: stats, timestamp: now });
 
     return stats;
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import Notifications from './Notifications';
+import VoiceAssistant from './VoiceAssistant';
 
 const MainLayout = ({ children }) => {
     return (
@@ -17,6 +18,7 @@ const MainLayout = ({ children }) => {
                 </div>
                 {children}
             </main>
+            <VoiceAssistant />
         </div>
     );
 };

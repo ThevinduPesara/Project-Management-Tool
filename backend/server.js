@@ -40,6 +40,7 @@ const io = new Server(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.set('io', io);
 
 // Request Logger
 app.use((req, res, next) => {
@@ -58,6 +59,9 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/qa', require('./routes/qa'));
 app.use('/api/chat', chatRoutes);
 app.use('/api/files', require('./routes/files'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/invitations', require('./routes/invitations'));
+app.use('/api/activity', require('./routes/activity'));
 
 // Static files (uploads)
 const path = require('path');
@@ -83,6 +87,9 @@ io.use((socket, next) => {
 // Socket.io connection handling
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.userId}`);
+
+    // Join a private room for user-specific notifications
+    socket.join(socket.userId.toString());
 
     // Join a group chat room
     socket.on('join-group', (groupId) => {

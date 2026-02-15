@@ -13,8 +13,15 @@ router.post('/', auth, async (req, res) => {
         // check if user is in group
         const group = await Group.findById(groupId);
         if (!group) return res.status(404).json({ msg: 'Group not found' });
-        if (!group.members.includes(req.user.id)) {
+
+        const member = group.members.find(m => m.user.toString() === req.user.id);
+        if (!member) {
             return res.status(401).json({ msg: 'Unauthorized' });
+        }
+
+        // Only Leader and Task-Manager can create tasks
+        if (!['leader', 'task-manager'].includes(member.role)) {
+            return res.status(403).json({ msg: 'Only Leaders and Task Managers can create tasks' });
         }
 
         const newTask = new Task({
@@ -27,20 +34,23 @@ router.post('/', auth, async (req, res) => {
         });
 
         await newTask.save();
-        // Removed duplicate save
-        // await newTask.save(); 
+
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity(req.user.id, groupId, 'task_created', { title, taskId: newTask._id });
 
         if (assignedTo) {
             await notificationController.createNotification(
                 assignedTo,
-                `You have been assigned to a new task: ${title}`
+                `You have been assigned to a new task: ${title}`,
+                'info',
+                req.app.get('io')
             );
         }
 
         res.json(newTask);
     } catch (err) {
         console.error('Task creation error:', err);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });
 
@@ -76,10 +86,19 @@ router.patch('/:id/status', auth, async (req, res) => {
         }
 
         await task.save();
+
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity(req.user.id, task.group, 'task_status_updated', {
+            taskId: task._id,
+            taskTitle: task.title,
+            from: oldStatus,
+            to: status
+        });
+
         res.json(task);
     } catch (err) {
         console.error('Status update error:', err);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });
 
@@ -96,7 +115,9 @@ router.patch('/:id/assign', auth, async (req, res) => {
         if (assignedTo) {
             await notificationController.createNotification(
                 assignedTo,
-                `You have been assigned to task: ${task.title}`
+                `You have been assigned to task: ${task.title}`,
+                'info',
+                req.app.get('io')
             );
         }
 

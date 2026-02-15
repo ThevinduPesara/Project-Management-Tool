@@ -141,7 +141,47 @@ const weeklyDigestTemplate = (data) => `
 </html>
 `;
 
+const invitationTemplate = (data) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; }
+        .container { max-width: 6000px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+        .header { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }
+        .content { padding: 20px; text-align: center; }
+        .footer { text-align: center; font-size: 12px; color: #999; margin-top: 20px; }
+        .btn { display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold; }
+        .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You're Invited! 🚀</h1>
+        </div>
+        <div class="content">
+            <h3>Hello!</h3>
+            <p><strong>${data.inviterName}</strong> has invited you to join the group <strong>${data.groupName}</strong> on UniTask.</p>
+            <p>You'll be joining as a <strong>${data.role}</strong>.</p>
+            
+            <a href="${data.inviteUrl}" class="btn">Accept Invitation</a>
+
+            <div class="info-box">
+                <p>This invitation will expire in 48 hours.</p>
+                <p>If you don't have a UniTask account yet, you'll be asked to create one when you accept.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 UniTask. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
 module.exports = {
     dailyDigestTemplate,
-    weeklyDigestTemplate
+    weeklyDigestTemplate,
+    invitationTemplate
 };

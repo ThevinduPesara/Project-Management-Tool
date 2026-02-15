@@ -1,0 +1,19 @@
+--- MEMBERSHIP RECOVERY REPORT ---
+
+Group: ITPM (69846f6432ca78d094383830)
+- Found 69 tasks. Users involved: Sahan Vimukthi, Thevindu Pesara, pesara
+- Found 0 activity logs. Users involved: Sahan Vimukthi, Thevindu Pesara, pesara
+- Current members in Group model: Thevindu Pesara
+- POTENTIAL MISSING MEMBERS: Sahan Vimukthi (69846faf32ca78d09438383d), pesara (6988425c9bc5e70d1a1e7e3a)
+
+Group: NDM (69897f5abd196903d85b34a0)
+- Found 0 tasks. Users involved: 
+- Found 0 activity logs. Users involved: 
+- Current members in Group model: pesara
+- POTENTIAL MISSING MEMBERS: 
+
+Group: NDM (6989a638d4a8f02326dc0ab0)
+- Found 35 tasks. Users involved: Saman Gajadeera
+- Found 0 activity logs. Users involved: Saman Gajadeera
+- Current members in Group model: Thevindu Pesara
+- POTENTIAL MISSING MEMBERS: Saman Gajadeera (6989a602d4a8f02326dc0a83)

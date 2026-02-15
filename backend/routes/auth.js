@@ -21,7 +21,8 @@ router.post('/register', async (req, res) => {
             res.json({ token });
         });
     } catch (err) {
-        res.status(500).send('Server Error');
+        console.error('Register Error:', err.message);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });
 
@@ -29,20 +30,32 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(`[LOGIN ATTEMPT] Email: ${email}`);
+
         let user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ msg: 'Invalid Credentials' });
+        if (!user) {
+            console.log(`[LOGIN FAILED] User not found: ${email}`);
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
+        if (!isMatch) {
+            console.log(`[LOGIN FAILED] Password mismatch for: ${email}`);
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
 
         const payload = { user: { id: user.id } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
-            if (err) throw err;
+            if (err) {
+                console.error('[JWT SIGN ERROR]', err);
+                return res.status(500).json({ msg: 'Token generation failed: ' + err.message });
+            }
+            console.log(`[LOGIN SUCCESS] Token generated for: ${email}`);
             res.json({ token });
         });
     } catch (err) {
-        console.error('Login Error:', err);
-        res.status(500).send('Server Error: ' + err.message);
+        console.error('[LOGIN ERROR]', err);
+        res.status(500).json({ msg: 'Server Error: ' + err.message });
     }
 });
 
@@ -50,9 +63,11 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
+        if (!user) return res.status(404).json({ msg: 'User not found' });
         res.json(user);
     } catch (err) {
-        res.status(500).send('Server Error');
+        console.error('Get User Error:', err.message);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });
 

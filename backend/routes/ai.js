@@ -9,5 +9,6 @@ const upload = multer({ dest: 'uploads/' });
 router.post('/estimate-difficulty', authMiddleware, aiController.estimateDifficulty);
 router.post('/analyze', authMiddleware, upload.single('file'), aiController.analyzeProject);
 router.post('/confirm', authMiddleware, aiController.confirmPlan);
+router.post('/ask', authMiddleware, aiController.askAssistant);
 
 module.exports = router;

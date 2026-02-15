@@ -15,14 +15,19 @@ router.post('/create', auth, async (req, res) => {
             name,
             description,
             leader: req.user.id,
-            members: [req.user.id],
+            members: [{ user: req.user.id, role: 'leader' }],
             inviteCode
         });
 
         await newGroup.save();
+
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity(req.user.id, newGroup._id, 'group_created', { name });
+
         res.json(newGroup);
     } catch (err) {
-        res.status(500).send('Server Error');
+        console.error('Create Group Error:', err.message);
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -33,25 +38,31 @@ router.post('/join', auth, async (req, res) => {
         const group = await Group.findOne({ inviteCode });
         if (!group) return res.status(404).json({ msg: 'Group not found' });
 
-        if (group.members.includes(req.user.id)) {
+        if (group.members.some(m => m.user.toString() === req.user.id)) {
             return res.status(400).json({ msg: 'Already a member' });
         }
 
-        group.members.push(req.user.id);
+        group.members.push({ user: req.user.id, role: 'member' });
         await group.save();
+
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity(req.user.id, group._id, 'member_joined');
+
         res.json(group);
     } catch (err) {
-        res.status(500).send('Server Error');
+        console.error('Join Group Error:', err.message);
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
 // Get user's groups
 router.get('/my-groups', auth, async (req, res) => {
     try {
-        const groups = await Group.find({ members: req.user.id }).populate('members', 'name email');
+        const groups = await Group.find({ 'members.user': req.user.id }).populate('members.user', 'name email');
         res.json(groups);
     } catch (err) {
-        res.status(500).send('Server Error');
+        console.error('Get Groups Error:', err.message);
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

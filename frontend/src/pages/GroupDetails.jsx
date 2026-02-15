@@ -169,8 +169,8 @@ const GroupDetails = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    {group.members.slice(0, 5).map((member, i) => (
-                                        <div key={member._id} style={{
+                                    {group.members.slice(0, 5).map((m, i) => (
+                                        <div key={m.user?._id || m.user} style={{
                                             width: '28px',
                                             height: '28px',
                                             borderRadius: '50%',
@@ -185,7 +185,7 @@ const GroupDetails = () => {
                                             color: 'white',
                                             zIndex: 5 - i
                                         }}>
-                                            {member.name.charAt(0)}
+                                            {m.user?.name?.charAt(0) || '?'}
                                         </div>
                                     ))}
                                     {group.members.length > 5 && (
@@ -253,7 +253,7 @@ const GroupDetails = () => {
                 <ChatRoom
                     groupId={groupId}
                     currentUserId={currentUserId}
-                    members={group.members}
+                    members={group.members.map(m => m.user)}
                     leader={group.leader}
                 />
             )}

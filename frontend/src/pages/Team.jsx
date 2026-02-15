@@ -25,16 +25,22 @@ const Team = () => {
     const membersMap = new Map();
     groups.forEach(group => {
         group.members.forEach(member => {
-            if (!membersMap.has(member._id)) {
-                membersMap.set(member._id, {
-                    ...member,
+            const userData = member.user;
+            if (!userData) return;
+
+            if (!membersMap.has(userData._id)) {
+                membersMap.set(userData._id, {
+                    ...userData,
+                    role: member.role,
                     groups: [group.name],
-                    isLeader: member._id === group.leader
+                    isLeader: userData._id === group.leader
                 });
             } else {
-                const existing = membersMap.get(member._id);
-                existing.groups.push(group.name);
-                if (member._id === group.leader) existing.isLeader = true;
+                const existing = membersMap.get(userData._id);
+                if (!existing.groups.includes(group.name)) {
+                    existing.groups.push(group.name);
+                }
+                if (userData._id === group.leader) existing.isLeader = true;
             }
         });
     });

@@ -175,8 +175,10 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
                                     style={{ width: '100%', paddingLeft: '3rem' }}
                                 >
                                     <option value="">Unassigned</option>
-                                    {members.map(member => (
-                                        <option key={member._id} value={member._id}>{member.name}</option>
+                                    {members.map(m => (
+                                        <option key={m.user?._id || m.user} value={m.user?._id || m.user}>
+                                            {m.user?.name || 'Member'}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

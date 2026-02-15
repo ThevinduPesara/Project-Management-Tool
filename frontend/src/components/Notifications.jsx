@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import notificationService from '../api/notificationService';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { Bell, Check } from 'lucide-react';
 import './Notifications.css';
 
 const Notifications = () => {
     const { user } = useAuth();
+    const { socket, connected } = useSocket();
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -14,6 +16,21 @@ const Notifications = () => {
             fetchNotifications();
         }
     }, [user]);
+
+    useEffect(() => {
+        if (socket && connected) {
+            const handleNewNotification = (notification) => {
+                setNotifications(prev => [notification, ...prev]);
+                // Optional: Show a toast or play a sound here
+            };
+
+            socket.on('new-notification', handleNewNotification);
+
+            return () => {
+                socket.off('new-notification', handleNewNotification);
+            };
+        }
+    }, [socket, connected]);
 
     const fetchNotifications = async () => {
         try {

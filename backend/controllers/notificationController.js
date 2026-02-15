@@ -48,11 +48,19 @@ exports.markRead = async (req, res) => {
     }
 };
 
-exports.createNotification = async (userId, message, type = 'info') => {
+exports.createNotification = async (userId, message, type = 'info', io = null) => {
     try {
         console.log(`Creating notification for user: ${userId}, message: ${message}`);
         const notification = new Notification({ user: userId, message, type });
         await notification.save();
+
+        // Real-time notification via Socket.IO
+        if (io) {
+            console.log(`Emitting real-time notification to user: ${userId}`);
+            io.to(userId.toString()).emit('new-notification', notification);
+        } else {
+            console.warn('Socket.IO instance not provided to createNotification');
+        }
 
         // Check if user wants email notifications
         const user = await User.findById(userId);
@@ -61,12 +69,12 @@ exports.createNotification = async (userId, message, type = 'info') => {
             return;
         }
 
-        console.log(`User found: ${user.email}, Email Pref: ${user.emailNotificationsEnabled}`);
+        console.log(`Notification User: ${user.email}, Email Pref: ${user.emailNotificationsEnabled}`);
 
         if (user.emailNotificationsEnabled && process.env.EMAIL_USER) {
             await sendEmail(user.email, 'New Notification - UniTask', message);
         } else {
-            console.log('Skipping email. Enabled:', user.emailNotificationsEnabled, 'Has Env User:', !!process.env.EMAIL_USER);
+            console.log(`Skipping email. Enabled: ${user.emailNotificationsEnabled}, EnvUser: ${!!process.env.EMAIL_USER}`);
         }
     } catch (error) {
         console.error('Notification error:', error);

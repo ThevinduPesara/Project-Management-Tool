@@ -1,0 +1,26 @@
+--- DATABASE DIAGNOSTIC ---
+
+--- ALL USERS (6) ---
+- Thevindu Pesara | thevindupesara@gmail.com | 69846f3932ca78d09438382c
+- Sahan Vimukthi | sahan@gmail.com | 69846faf32ca78d09438383d
+- pesara | pesara@gmail.com | 6988425c9bc5e70d1a1e7e3a
+- john | john@gmail.com | 698844929bc5e70d1a1e7eec
+- Kanika  | kanika@gmail.com | 69899adad4a8f02326dc0974
+- Saman Gajadeera | gajadeeraconstruction@gmail.com | 6989a602d4a8f02326dc0a83
+
+--- ALL GROUPS (3) ---
+
+Group: ITPM (69846f6432ca78d094383830)
+Leader: 69846f3932ca78d09438382c
+Members: [{"user":"69846f3932ca78d09438382c","role":"leader","_id":"6991b7d71ca84ced165c79ab"}]
+Leader exists in DB? true
+
+Group: NDM (69897f5abd196903d85b34a0)
+Leader: 6988425c9bc5e70d1a1e7e3a
+Members: [{"user":"6988425c9bc5e70d1a1e7e3a","role":"leader","_id":"6991b7d71ca84ced165c79ad"}]
+Leader exists in DB? true
+
+Group: NDM (6989a638d4a8f02326dc0ab0)
+Leader: 69846f3932ca78d09438382c
+Members: [{"user":"69846f3932ca78d09438382c","role":"leader","_id":"6991b7d71ca84ced165c79af"}]
+Leader exists in DB? true

@@ -83,7 +83,7 @@ const processWeeklyDigest = async (user) => {
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
         // Find groups user is part of
-        const groups = await Group.find({ members: user._id });
+        const groups = await Group.find({ 'members.user': user._id });
         const groupStats = [];
 
         let totalCommits = 0;

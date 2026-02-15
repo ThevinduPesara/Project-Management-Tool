@@ -11,7 +11,7 @@ router.get('/summary', auth, async (req, res) => {
         const userId = req.user.id;
 
         // 1. Get all groups user is part of
-        const groups = await Group.find({ members: userId });
+        const groups = await Group.find({ 'members.user': userId });
         const groupIds = groups.map(g => g._id);
         const activeProjects = groups.length;
 
@@ -126,7 +126,7 @@ router.get('/summary', auth, async (req, res) => {
 // Get GitHub contribution stats for a group
 router.get('/github/:groupId', auth, async (req, res) => {
     try {
-        const group = await Group.findById(req.params.groupId).populate('members', 'name githubUsername');
+        const group = await Group.findById(req.params.groupId).populate('members.user', 'name githubUsername');
         if (!group) return res.status(404).json({ msg: 'Group not found' });
         if (!group.githubRepo) return res.json({ stats: [] });
 
@@ -138,14 +138,16 @@ router.get('/github/:groupId', auth, async (req, res) => {
 
         // Map GitHub stats to group members
         const teamStats = group.members.map(member => {
-            const githubHandle = member.githubUsername?.toLowerCase();
+            const userData = member.user;
+            if (!userData) return null;
+            const githubHandle = userData.githubUsername?.toLowerCase();
             return {
-                _id: member._id,
-                name: member.name,
-                githubUsername: member.githubUsername,
+                _id: userData._id,
+                name: userData.name,
+                githubUsername: userData.githubUsername,
                 commits: githubHandle ? (commitStats[githubHandle] || 0) : 0
             };
-        });
+        }).filter(s => s !== null);
 
         res.json({
             repo: group.githubRepo,
