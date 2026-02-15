@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles, MessageCircle, TrendingDown } from 'lucide-react';
+import { Plus, Sparkles, MessageCircle, TrendingDown, Settings } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import CreateTaskModal from '../components/CreateTaskModal';
 import AIPlanner from '../components/AIPlanner';
@@ -240,6 +240,15 @@ const GroupDetails = () => {
                     >
                         <Plus size={18} /> New Work Item
                     </button>
+                )}
+                {group && ['leader', 'task-manager'].includes(group.members.find(m => m.user._id === currentUserId)?.role) && (
+                    <Link
+                        to={`/group/${groupId}/admin`}
+                        className="btn-outline"
+                        style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                    >
+                        <Settings size={18} /> Admin Dashboard
+                    </Link>
                 )}
             </div>
 
