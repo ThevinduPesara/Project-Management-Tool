@@ -67,8 +67,9 @@ const GroupDetails = () => {
 
     const handleStatusChange = async (taskId, newStatus) => {
         try {
-            await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
-            setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+            const res = await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+            const updatedTask = res.data;
+            setTasks(tasks.map(t => t._id === taskId ? updatedTask : t));
         } catch (err) {
             console.error(err);
         }
@@ -253,7 +254,12 @@ const GroupDetails = () => {
             </div>
 
             {activeTab === 'board' ? (
-                <KanbanBoard tasks={tasks} onStatusChange={handleStatusChange} />
+                <KanbanBoard
+                    tasks={tasks}
+                    onStatusChange={handleStatusChange}
+                    isLeader={isLeader}
+                    currentUserId={currentUserId}
+                />
             ) : activeTab === 'analytics' ? (
                 <BurndownChart groupId={groupId} />
             ) : activeTab === 'planner' ? (

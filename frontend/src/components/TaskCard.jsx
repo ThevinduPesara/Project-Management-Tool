@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, User, Clock } from 'lucide-react';
+import { Calendar, User, Clock, CheckCircle } from 'lucide-react';
 
 const TaskCard = ({ task }) => {
     const getStatusColor = (status) => {
@@ -43,15 +43,23 @@ const TaskCard = ({ task }) => {
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Calendar size={14} />
-                        {formatDate(task.deadline)}
-                    </div>
-                    {task.assignedTo && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <User size={14} />
-                            {task.assignedTo.name}
+                            <Calendar size={14} />
+                            {formatDate(task.deadline)}
+                        </div>
+                        {task.assignedTo && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <User size={14} />
+                                {task.assignedTo.name}
+                            </div>
+                        )}
+                    </div>
+                    {task.status === 'Done' && task.reviewedBy && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontWeight: '500' }}>
+                            <CheckCircle size={14} />
+                            Verified by: {task.reviewedBy.name}
                         </div>
                     )}
                 </div>

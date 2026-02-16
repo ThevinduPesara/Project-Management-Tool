@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, User, Bug, FileText, CheckSquare } from 'lucide-react';
+import { Clock, User, Bug, FileText, CheckSquare, CheckCircle } from 'lucide-react';
 import {
     DndContext,
     rectIntersection,
@@ -15,7 +15,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Sparkles } from 'lucide-react';
 import QAModal from './QAModal';
 
-const DraggableTask = ({ task }) => {
+const DraggableTask = ({ task, isLeader }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: task._id,
         data: { task }
@@ -59,7 +59,7 @@ const DraggableTask = ({ task }) => {
                         <span>{new Date(task.deadline).toLocaleDateString()}</span>
                     </div>
                     <div className="card-user" title={task.assignedTo?.name || 'Unassigned'}>
-                        {task.assignedTo ? (
+                        {task.assignedTo?.name ? (
                             <div className="user-avatar-sm">{task.assignedTo.name.charAt(0)}</div>
                         ) : (
                             <User size={14} color="var(--text-muted)" />
@@ -69,7 +69,7 @@ const DraggableTask = ({ task }) => {
 
                 {task.status === 'Under Review' && (
                     <button
-                        className="btn-primary"
+                        className={isLeader ? "btn-primary" : "btn-outline"}
                         style={{
                             fontSize: '0.7rem',
                             padding: '0.4rem',
@@ -78,22 +78,48 @@ const DraggableTask = ({ task }) => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.25rem',
-                            background: 'var(--primary-light)'
+                            background: isLeader ? 'var(--primary-light)' : 'transparent',
+                            color: isLeader ? 'white' : 'var(--text-muted)',
+                            cursor: isLeader ? 'pointer' : 'default'
                         }}
                         onClick={(e) => {
                             e.stopPropagation();
-                            window.dispatchEvent(new CustomEvent('open-qa-modal', { detail: task }));
+                            if (isLeader) {
+                                window.dispatchEvent(new CustomEvent('open-qa-modal', { detail: task }));
+                            }
                         }}
                     >
-                        <Sparkles size={12} /> Verify with AI
+                        {isLeader ? (
+                            <><CheckSquare size={12} /> Review & Approve</>
+                        ) : (
+                            <><Clock size={12} /> Awaiting Leader Review</>
+                        )}
                     </button>
+                )}
+
+                {task.status === 'Done' && task.reviewedBy && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.7rem',
+                        color: 'var(--success)',
+                        fontWeight: '600',
+                        padding: '0.4rem',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}>
+                        <CheckCircle size={12} />
+                        <span>Verified by: {task.reviewedBy?.name || 'Leader'}</span>
+                    </div>
                 )}
             </div>
         </motion.div>
     );
 };
 
-const DroppableColumn = ({ id, title, tasks, color }) => {
+const DroppableColumn = ({ id, title, tasks, color, isLeader }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: id,
         data: { status: id }
@@ -117,7 +143,7 @@ const DroppableColumn = ({ id, title, tasks, color }) => {
 
             <div className="column-content">
                 {tasks.map(task => (
-                    <DraggableTask key={task._id} task={task} />
+                    <DraggableTask key={task._id} task={task} isLeader={isLeader} />
                 ))}
                 {tasks.length === 0 && (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', border: '2px dashed var(--border)', borderRadius: '1rem', marginTop: '1rem' }}>
@@ -130,7 +156,7 @@ const DroppableColumn = ({ id, title, tasks, color }) => {
 };
 
 
-const KanbanBoard = ({ tasks, onStatusChange }) => {
+const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId }) => {
     const [activeId, setActiveId] = useState(null);
     const [qaTask, setQaTask] = useState(null);
 
@@ -206,6 +232,7 @@ const KanbanBoard = ({ tasks, onStatusChange }) => {
                         title={col.title}
                         tasks={tasks.filter(t => t.status === col.status)}
                         color={col.color}
+                        isLeader={isLeader}
                     />
                 ))}
             </div>
@@ -213,7 +240,7 @@ const KanbanBoard = ({ tasks, onStatusChange }) => {
             <DragOverlay dropAnimation={null}>
                 {activeId ? (
                     <div style={{ transform: 'rotate(2deg)', opacity: 0.8, pointerEvents: 'none' }}>
-                        <DraggableTask task={tasks.find(t => t._id === activeId)} />
+                        <DraggableTask task={tasks.find(t => t._id === activeId)} isLeader={isLeader} />
                     </div>
                 ) : null}
             </DragOverlay>
@@ -223,6 +250,7 @@ const KanbanBoard = ({ tasks, onStatusChange }) => {
                 onClose={() => setQaTask(null)}
                 task={qaTask}
                 onVerified={handleQAVerified}
+                isLeader={isLeader}
             />
         </DndContext>
     );

@@ -57,7 +57,9 @@ router.post('/', auth, async (req, res) => {
 // Get group tasks
 router.get('/group/:groupId', auth, async (req, res) => {
     try {
-        const tasks = await Task.find({ group: req.params.groupId }).populate('assignedTo', 'name email');
+        const tasks = await Task.find({ group: req.params.groupId })
+            .populate('assignedTo', 'name email')
+            .populate('reviewedBy', 'name');
         res.json(tasks);
     } catch (err) {
         res.status(500).send('Server Error');
@@ -72,6 +74,24 @@ router.patch('/:id/status', auth, async (req, res) => {
         if (!task) return res.status(404).json({ msg: 'Task not found' });
 
         const oldStatus = task.status;
+
+        if (oldStatus === 'Under Review' && status === 'Done') {
+            const group = await Group.findById(task.group);
+            if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+            const isLeader = group.leader.toString() === req.user.id ||
+                group.members.some(m => m.user.toString() === req.user.id && m.role === 'leader');
+
+            if (!isLeader) {
+                return res.status(403).json({ msg: 'Only the Group Leader can approve tasks from review' });
+            }
+            task.reviewedBy = req.user.id;
+        }
+
+        if (req.body.submissionNote) {
+            task.submissionNote = req.body.submissionNote;
+        }
+
         task.status = status;
 
         // Add to history
@@ -95,7 +115,12 @@ router.patch('/:id/status', auth, async (req, res) => {
             to: status
         });
 
-        res.json(task);
+        // Fetch populated task to return to frontend
+        const populatedTask = await Task.findById(task._id)
+            .populate('assignedTo', 'name email')
+            .populate('reviewedBy', 'name');
+
+        res.json(populatedTask);
     } catch (err) {
         console.error('Status update error:', err);
         res.status(500).json({ msg: 'Server Error', error: err.message });

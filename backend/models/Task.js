@@ -19,6 +19,7 @@ const taskSchema = new mongoose.Schema({
     difficultyEmoji: String, // From OpenAI API later
     difficultyLevel: String, // Easy, Medium, Hard
     estimatedHours: Number,
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     completedAt: Date,
     statusHistory: [{
         from: String,
