@@ -1,0 +1,92 @@
+Title Slide
+Title: UniTask: Intelligent Project Management Tool Subtitle: A MERN Stack Solution with AI-Powered Planning & Real-Time Collaboration Presenters: [Your Names] Date: [Date]
+
+(Visual Suggestion: Use the landing page screenshot as the background)
+
+Slide 2: Project Overview & Core Functions
+What is UniTask?
+
+A full-stack web application designed to streamline team project management.
+Integrates AI for planning, real-time chat for collaboration, and detailed analytics for tracking.
+The 4 Core Functions:
+
+User Management: Secure access & roles.
+System Assigned Tasks: AI-driven planning & assignment.
+Resource Sharing (Chat): Real-time communication.
+Tracking: Data-driven progress monitoring.
+
+
+
+👤 User Management Function
+Purpose
+Manages the complete user lifecycle — registration, authentication, profile management, and role-based access control within project groups.
+
+Key Features
+Feature	Description
+Registration	Users register with name, email, password, and role (leader / member)
+Login & Authentication	JWT-based authentication with 24-hour token expiry; passwords hashed via bcryptjs
+User Profile	Editable fields: name, GitHub username, skills, email digest preferences
+Role-Based Access Control	4 roles within groups: leader, task-manager, member, viewer
+Group Management	Create groups with auto-generated invite codes; join via invite code
+Email Invitations	Leaders/Task-Managers can invite users by email with token-based links (48-hour expiry)
+Admin Dashboard	View group members, search users by name/skill, and update member roles (leader only
+
+
+2. 📋 System Assigning Task Function (AI-Powered)
+Purpose
+Enables intelligent task creation, assignment, and lifecycle management — including an AI-powered planner that auto-generates and assigns tasks from a project brief.
+
+Key Features
+Feature	Description
+Manual Task Creation	Leaders/Task-Managers create tasks with title, description, deadline, assignee, and type (Story/Task/Bug)
+AI Project Planner	Upload a PDF brief or paste text → Gemini AI generates a full task plan with assignments based on team skills
+Smart Assignment	AI matches tasks to team members based on their registered skills
+AI Difficulty Estimation	AI estimates task difficulty (Easy/Medium/Hard), emoji, and estimated hours
+Task Assignment	Manual re-assignment with real-time notifications to the assignee
+Task Workflow	4-stage Kanban: To Do → In Progress → Under Review → Done
+Review Flow	Tasks must go through Under Review before Done; only leaders can approve
+QA Feedback	Tasks can receive QA feedback and submission notes
+Status History	Full audit trail of every status change with timestamps and who made the change
+GitHub Integration	Tasks track linked GitHub commits (hash, message, author, date)
+
+
+
+
+
+3. 💬 Resource Sharing / Chat Function
+Purpose
+Real-time group chat for project collaboration with file sharing, @mentions, emoji reactions, read receipts, and typing indicators.
+
+Key Features
+Feature	Description
+Real-Time Messaging	WebSocket-based (Socket.IO) instant messaging within project groups
+File Attachments	Share files with messages (filename, MIME type, size, URL stored)
+@Mentions	Mention team members using @name syntax; mentioned users are tracked and can filter mentioned messages
+Emoji Reactions	Toggle emoji reactions on any message; see who reacted
+Read Receipts	Track which users have read each message; auto-mark as read when chat is open
+Unread Count	Badge showing number of unread messages per group
+Typing Indicators	Real-time "user is typing..." indicators (auto-clear after 3 seconds)
+Paginated History	Messages loaded with pagination (50 per page); sorted oldest-first
+Notifications	In-app + email notifications for task assignments, plan applications, and status changes
+
+
+
+
+
+4. 📊 Tracking Function
+Purpose
+Comprehensive project progress tracking through dashboards, burndown charts, contribution scores, activity feeds, GitHub integration, and notifications.
+
+Key Features
+Feature	Description
+Dashboard Summary	Active projects, total tasks, in-progress tasks, overdue tasks
+Burndown Chart	Ideal vs. actual task completion over time; velocity calculation; predicted end date
+Team Contributions	Per-member scores: assigned tasks, completed tasks, completion %, GitHub commits
+GitHub Integration	Fetches commit stats per repository; maps GitHub handles to team members
+Activity Feed	Real-time feed of status changes (who moved what, when, in which group)
+Recent Tasks	Quick view of the 4 most recently created tasks
+Velocity & Prediction	Tasks-per-day velocity; estimates remaining days to finish; on-track indicator
+Real-Time Alerts	Socket.IO push notifications for instant updates
+Email Digests	Configurable daily/weekly email digests with task summaries
+Activity Logging	Logs all key actions: group created, member joined, task created, status updated, role changed, invitation sent/accepted
+Voice Assistant	AI-powered voice assistant for querying project status using natural language

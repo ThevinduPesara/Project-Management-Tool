@@ -251,7 +251,7 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
                             >
                                 {file.mimeType.startsWith('image/') ? (
                                     <img
-                                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${file.url}`}
+                                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || `${window.location.protocol}//${window.location.hostname}:5000`}${file.url}`}
                                         alt="attachment"
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />

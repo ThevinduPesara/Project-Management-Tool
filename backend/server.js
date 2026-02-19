@@ -16,6 +16,7 @@ const calendarRoutes = require('./routes/calendar');
 const chatRoutes = require('./routes/chat');
 
 const { initSchedulers } = require('./jobs/scheduler');
+const notificationController = require('./controllers/notificationController');
 
 // Setup process to log that we're starting
 console.log('Initializing UniTask Backend Server...');
@@ -32,7 +33,7 @@ const server = http.createServer(app);
 // Socket.io setup with CORS
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: true, // Allow any origin in development
         methods: ['GET', 'POST']
     }
 });
@@ -144,6 +145,22 @@ io.on('connection', (socket) => {
 
             // Broadcast to all users in the group (including sender)
             io.to(groupId).emit('new-message', message);
+
+            // Send notifications to mentioned users
+            if (mentions.length > 0) {
+                const senderName = message.sender.name || 'A teammate';
+                mentions.forEach(mentionId => {
+                    // Don't notify the sender if they mention themselves
+                    if (mentionId.toString() !== socket.userId.toString()) {
+                        notificationController.createNotification(
+                            mentionId,
+                            `${senderName} mentioned you in chat`,
+                            'info',
+                            io
+                        );
+                    }
+                });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             socket.emit('error', { message: 'Failed to send message' });

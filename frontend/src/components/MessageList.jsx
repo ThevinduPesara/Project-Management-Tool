@@ -7,7 +7,7 @@ import ReactionDisplay from './ReactionDisplay';
 const MessageList = ({ messages, currentUserId, typingUsers = [], members = [], onReact }) => {
     const messagesEndRef = useRef(null);
     const [activePickerId, setActivePickerId] = useState(null);
-    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || `${window.location.protocol}//${window.location.hostname}:5000`;
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {

@@ -17,7 +17,7 @@ exports.getGroupMessages = async (req, res) => {
         }
 
         const isMember = group.members.some(
-            member => member.toString() === req.user.id
+            member => member.user && member.user.toString() === req.user.id
         );
 
         if (!isMember && group.leader.toString() !== req.user.id) {
@@ -64,7 +64,7 @@ exports.sendMessage = async (req, res) => {
         }
 
         const isMember = group.members.some(
-            member => member.toString() === req.user.id
+            member => member.user && member.user.toString() === req.user.id
         );
 
         if (!isMember && group.leader.toString() !== req.user.id) {

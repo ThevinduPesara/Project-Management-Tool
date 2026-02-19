@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/chat';
+const API_URL = `${window.location.protocol}//${window.location.hostname}:5000/api/chat`;
 
 // Get message history for a group
 export const fetchMessages = async (groupId, page = 1, limit = 50) => {
