@@ -131,6 +131,29 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Client-side validation
+        const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+        const ALLOWED_TYPES = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain', 'application/zip', 'application/x-zip-compressed'
+        ];
+
+        if (file.size > MAX_SIZE) {
+            alert('File is too large. Max size is 10MB.');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert('Invalid file type. Only images, PDFs, and documents are allowed.');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
         try {
             setIsUploading(true);
             const formData = new FormData();

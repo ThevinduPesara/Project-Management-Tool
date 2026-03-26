@@ -46,7 +46,24 @@ const upload = multer({
     }
 });
 
-exports.uploadMiddleware = upload.single('file');
+const uploadSingle = upload.single('file');
+
+exports.uploadMiddleware = (req, res, next) => {
+    uploadSingle(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            // A Multer error occurred when uploading (e.g. file too large)
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'File is too large. Max size is 10MB.' });
+            }
+            return res.status(400).json({ error: err.message });
+        } else if (err) {
+            // An unknown error occurred when uploading
+            return res.status(400).json({ error: err.message });
+        }
+        // Everything went fine.
+        next();
+    });
+};
 
 exports.uploadFile = async (req, res) => {
     try {
