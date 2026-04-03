@@ -1,27 +1,107 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Folder, File, Image as ImageIcon, Download, ExternalLink, Calendar, User, Search, Filter } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Folder, File, Image as ImageIcon, Download, ExternalLink, 
+    Calendar, User, Search, Filter, Plus, Trash2, Pencil, X, Upload, Loader2 
+} from 'lucide-react';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const ResourceShare = () => {
+    const { user } = useAuth();
     const [resources, setResources] = useState([]);
+    const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
 
+    // Modal states
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedResource, setSelectedResource] = useState(null);
+    const [editName, setEditName] = useState('');
+    const [uploadGroupId, setUploadGroupId] = useState('');
+    const [uploadFile, setUploadFile] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const fetchResources = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get('/files/my-resources');
+            setResources(res.data);
+        } catch (err) {
+            console.error('Error fetching resources:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchGroups = async () => {
+        try {
+            const res = await api.get('/groups/my-groups');
+            setGroups(res.data);
+        } catch (err) {
+            console.error('Error fetching groups:', err);
+        }
+    };
+
     useEffect(() => {
-        const fetchResources = async () => {
-            try {
-                const res = await api.get('/files/my-resources');
-                setResources(res.data);
-            } catch (err) {
-                console.error('Error fetching resources:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchResources();
+        fetchGroups();
     }, []);
+
+    const handleUpload = async (e) => {
+        e.preventDefault();
+        if (!uploadFile || !uploadGroupId) return;
+
+        setIsSubmitting(true);
+        const formData = new FormData();
+        formData.append('file', uploadFile);
+        formData.append('groupId', uploadGroupId);
+
+        try {
+            await api.post('/files/upload-resource', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setIsUploadModalOpen(false);
+            setUploadFile(null);
+            setUploadGroupId('');
+            fetchResources();
+        } catch (err) {
+            alert(err.response?.data?.error || 'Upload failed');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        if (!editName.trim() || !selectedResource) return;
+
+        setIsSubmitting(true);
+        try {
+            await api.put(`/files/${selectedResource.messageId}/${selectedResource.filename}`, {
+                originalName: editName
+            });
+            setIsEditModalOpen(false);
+            fetchResources();
+        } catch (err) {
+            alert(err.response?.data?.error || 'Update failed');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (resource) => {
+        if (!window.confirm(`Are you sure you want to delete "${resource.originalName}"?`)) return;
+
+        try {
+            await api.delete(`/files/${resource.messageId}/${resource.filename}`);
+            fetchResources();
+        } catch (err) {
+            alert(err.response?.data?.error || 'Delete failed');
+        }
+    };
 
     const filteredResources = resources.filter(res => {
         const matchesSearch = res.originalName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -39,10 +119,19 @@ const ResourceShare = () => {
             <motion.header
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                style={{ marginBottom: '2rem' }}
+                style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}
             >
-                <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Resource Share</h1>
-                <p style={{ color: 'var(--text-dim)' }}>All shared files and documents across your projects.</p>
+                <div>
+                    <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Resource Share</h1>
+                    <p style={{ color: 'var(--text-dim)' }}>All shared files and documents across your projects.</p>
+                </div>
+                <button 
+                    onClick={() => setIsUploadModalOpen(true)}
+                    className="btn-primary" 
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
+                >
+                    <Plus size={20} /> Upload Resource
+                </button>
             </motion.header>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -132,6 +221,27 @@ const ResourceShare = () => {
                                 }}>
                                     {resource.mimeType.split('/')[1].toUpperCase()}
                                 </div>
+
+                                {user?._id === resource.sender?._id && (
+                                    <div style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', display: 'flex', gap: '0.4rem' }}>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedResource(resource);
+                                                setEditName(resource.originalName);
+                                                setIsEditModalOpen(true);
+                                            }}
+                                            style={{ background: 'rgba(0,0,0,0.6)', border: 'none', color: 'white', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(resource)}
+                                            style={{ background: 'rgba(220, 38, 38, 0.8)', border: 'none', color: 'white', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ padding: '1.25rem' }}>
                                 <h3 style={{ 
@@ -179,6 +289,122 @@ const ResourceShare = () => {
                     ))}
                 </div>
             )}
+
+            {/* Upload Modal */}
+            <AnimatePresence>
+                {isUploadModalOpen && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-card" 
+                            style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative', margin: 'auto' }}
+                        >
+                            <button 
+                                onClick={() => setIsUploadModalOpen(false)}
+                                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+                            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Upload New Resource</h2>
+                            <form onSubmit={handleUpload}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Select Project/Group</label>
+                                    <select 
+                                        required
+                                        value={uploadGroupId}
+                                        onChange={(e) => setUploadGroupId(e.target.value)}
+                                        className="glass-input"
+                                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white' }}
+                                    >
+                                        <option value="" style={{ background: '#1a1a1a' }}>-- Select a Group --</option>
+                                        {groups.map(g => (
+                                            <option key={g._id} value={g._id} style={{ background: '#1a1a1a' }}>{g.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Choose File</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input 
+                                            type="file" 
+                                            required
+                                            onChange={(e) => setUploadFile(e.target.files[0])}
+                                            style={{ width: '100%', color: 'var(--text-dim)' }}
+                                        />
+                                    </div>
+                                </div>
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting || !uploadFile || !uploadGroupId}
+                                    className="btn-primary" 
+                                    style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                                    {isSubmitting ? 'Uploading...' : 'Share Resource'}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Edit Modal */}
+            <AnimatePresence>
+                {isEditModalOpen && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-card" 
+                            style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative', margin: 'auto' }}
+                        >
+                            <button 
+                                onClick={() => setIsEditModalOpen(false)}
+                                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                            >
+                                <X size={24} />
+                            </button>
+                            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Rename Resource</h2>
+                            <form onSubmit={handleUpdate}>
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Filename</label>
+                                    <input 
+                                        type="text" 
+                                        required
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        className="glass-input"
+                                        style={{ width: '100%' }}
+                                        placeholder="Enter new filename..."
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setIsEditModalOpen(false)}
+                                        className="btn-outline" 
+                                        style={{ flex: 1, padding: '0.75rem' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmitting || !editName.trim()}
+                                        className="btn-primary" 
+                                        style={{ flex: 2, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    >
+                                        {isSubmitting && <Loader2 className="animate-spin" size={18} />}
+                                        {isSubmitting ? 'Updating...' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
