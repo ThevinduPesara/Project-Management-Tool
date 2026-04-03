@@ -18,7 +18,9 @@ const ResourceShare = () => {
     // Modal states
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState(null);
+    const [resourceToDelete, setResourceToDelete] = useState(null);
     const [editName, setEditName] = useState('');
     const [uploadGroupId, setUploadGroupId] = useState('');
     const [uploadFile, setUploadFile] = useState(null);
@@ -92,14 +94,24 @@ const ResourceShare = () => {
         }
     };
 
-    const handleDelete = async (resource) => {
-        if (!window.confirm(`Are you sure you want to delete "${resource.originalName}"?`)) return;
+    const handleDelete = (resource) => {
+        setResourceToDelete(resource);
+        setIsDeleteModalOpen(true);
+    };
 
+    const confirmDelete = async () => {
+        if (!resourceToDelete) return;
+
+        setIsSubmitting(true);
         try {
-            await api.delete(`/files/${resource.messageId}/${resource.filename}`);
+            await api.delete(`/files/${resourceToDelete.messageId}/${resourceToDelete.filename}`);
+            setIsDeleteModalOpen(false);
+            setResourceToDelete(null);
             fetchResources();
         } catch (err) {
             alert(err.response?.data?.error || 'Delete failed');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -401,6 +413,60 @@ const ResourceShare = () => {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {isDeleteModalOpen && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-card" 
+                            style={{ width: '100%', maxWidth: '400px', padding: '2rem', position: 'relative', margin: 'auto', textAlign: 'center' }}
+                        >
+                            <div style={{ 
+                                width: '60px', 
+                                height: '60px', 
+                                borderRadius: '30px', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                color: '#ef4444', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                margin: '0 auto 1.5rem' 
+                            }}>
+                                <Trash2 size={30} />
+                            </div>
+                            
+                            <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem' }}>Delete Resource?</h2>
+                            <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                                Are you sure you want to delete <strong>"{resourceToDelete?.originalName}"</strong>? This action cannot be undone.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button 
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    className="btn-outline" 
+                                    style={{ flex: 1, padding: '0.75rem' }}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={confirmDelete}
+                                    className="btn-primary" 
+                                    style={{ flex: 1, padding: '0.75rem', background: '#ef4444', borderColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting && <Loader2 className="animate-spin" size={18} />}
+                                    {isSubmitting ? 'Deleting...' : 'Delete'}
+                                </button>
+                            </div>
                         </motion.div>
                     </div>
                 )}
