@@ -12,6 +12,7 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [attachments, setAttachments] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [errorModal, setErrorModal] = useState({ show: false, title: '', message: '' });
 
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -143,13 +144,21 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
         ];
 
         if (file.size > MAX_SIZE) {
-            alert('File is too large. Max size is 10MB.');
+            setErrorModal({
+                show: true,
+                title: 'File Too Large',
+                message: 'The file you selected exceeds the 10MB limit. Please choose a smaller file.'
+            });
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            alert('Invalid file type. Only images, PDFs, and documents are allowed.');
+            setErrorModal({
+                show: true,
+                title: 'Invalid File Type',
+                message: 'Only images, PDFs, and common documents are allowed.'
+            });
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
@@ -166,7 +175,11 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
             setAttachments(prev => [...prev, res.data]);
         } catch (err) {
             console.error('File upload failed:', err);
-            alert('Failed to upload file. Size might be too large or invalid type.');
+            setErrorModal({
+                show: true,
+                title: 'Upload Failed',
+                message: 'There was an error uploading your file. It might be too large or an unsupported format.'
+            });
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -369,6 +382,48 @@ const MessageInput = ({ onSendMessage, onTyping, disabled, members = [] }) => {
                     <Send size={18} />
                 </button>
             </form>
+
+            {/* Error Modal */}
+            <AnimatePresence>
+                {errorModal.show && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 9999, padding: '1rem' }}>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-card" 
+                            style={{ width: '100%', maxWidth: '400px', padding: '2rem', position: 'relative', margin: 'auto', textAlign: 'center' }}
+                        >
+                            <div style={{ 
+                                width: '60px', 
+                                height: '60px', 
+                                borderRadius: '30px', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                color: '#ef4444', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                margin: '0 auto 1.5rem' 
+                            }}>
+                                <X size={30} strokeWidth={3} />
+                            </div>
+                            
+                            <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem' }}>{errorModal.title}</h2>
+                            <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                                {errorModal.message}
+                            </p>
+
+                            <button 
+                                onClick={() => setErrorModal({ ...errorModal, show: false })}
+                                className="btn-primary" 
+                                style={{ width: '100%', padding: '0.75rem' }}
+                            >
+                                Got it
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
