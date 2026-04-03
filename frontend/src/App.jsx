@@ -20,6 +20,18 @@ import ResourceShare from './pages/ResourceShare';
 
 const App = () => {
     const { user, loading } = useContext(AuthContext);
+    React.useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        const applyTheme = (t) => {
+            if (t === 'system') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', t);
+            }
+        };
+        applyTheme(savedTheme);
+    }, []);
 
     if (loading) return <div style={{ color: 'white', textAlign: 'center', marginTop: '20%' }}>Loading...</div>;
 

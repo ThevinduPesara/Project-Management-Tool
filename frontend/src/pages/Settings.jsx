@@ -21,6 +21,31 @@ const Settings = () => {
 
     // Form states for password change
     const [passwordForm, setPasswordForm] = React.useState({ current: '', new: '', confirm: '' });
+    const [theme, setTheme] = React.useState(localStorage.getItem('theme') || 'system');
+
+    React.useEffect(() => {
+        const applyTheme = (t) => {
+            if (t === 'system') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', t);
+            }
+            localStorage.setItem('theme', t);
+        };
+
+        applyTheme(theme);
+
+        // Listen for system theme changes if in system mode
+        if (theme === 'system') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const handleChange = (e) => {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            };
+            mediaQuery.addEventListener('change', handleChange);
+            return () => mediaQuery.removeEventListener('change', handleChange);
+        }
+    }, [theme]);
 
     React.useEffect(() => {
         if (user) {
@@ -410,9 +435,27 @@ const Settings = () => {
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Theme Mode</label>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button className="btn-primary" style={{ flex: 1, padding: '0.5rem' }}>System</button>
-                                        <button className="btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Dark</button>
-                                        <button className="btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Light</button>
+                                        <button 
+                                            className={theme === 'system' ? "btn-primary" : "btn-outline"} 
+                                            style={{ flex: 1, padding: '0.5rem' }}
+                                            onClick={() => setTheme('system')}
+                                        >
+                                            System
+                                        </button>
+                                        <button 
+                                            className={theme === 'dark' ? "btn-primary" : "btn-outline"} 
+                                            style={{ flex: 1, padding: '0.5rem' }}
+                                            onClick={() => setTheme('dark')}
+                                        >
+                                            Dark
+                                        </button>
+                                        <button 
+                                            className={theme === 'light' ? "btn-primary" : "btn-outline"} 
+                                            style={{ flex: 1, padding: '0.5rem' }}
+                                            onClick={() => setTheme('light')}
+                                        >
+                                            Light
+                                        </button>
                                     </div>
                                 </div>
                                 <div>

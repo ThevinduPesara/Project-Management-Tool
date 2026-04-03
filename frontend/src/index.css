@@ -16,6 +16,27 @@
   --glass: rgba(255, 255, 255, 0.7);
 }
 
+[data-theme='dark'] {
+  --bg-main: #0f172a;
+  --bg-sidebar: #020617;
+  --bg-card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.1);
+  --glass: rgba(15, 23, 42, 0.7);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+}
+
+[data-theme='light'] {
+  --bg-main: #f8fafc;
+  --bg-sidebar: #111827;
+  --bg-card: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --glass: rgba(255, 255, 255, 0.7);
+}
+
 * {
   margin: 0;
   padding: 0;
