@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
 import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Calendar, X, Award } from 'lucide-react';
 import calendarService from '../api/calendarService';
@@ -13,8 +13,14 @@ const Settings = () => {
     const [newSkill, setNewSkill] = React.useState('');
     const [emailEnabled, setEmailEnabled] = React.useState(user?.emailDigestEnabled ?? true);
     const [frequency, setFrequency] = React.useState(user?.emailDigestFrequency || 'daily');
+    const [pushEnabled, setPushEnabled] = React.useState(user?.pushNotificationsEnabled ?? true);
+    const [emailEnabledNotifications, setEmailEnabledNotifications] = React.useState(user?.emailNotificationsEnabled ?? true);
     const [saving, setSaving] = React.useState(false);
     const [sendingTest, setSendingTest] = React.useState(false);
+    const [activeModal, setActiveModal] = React.useState(null);
+
+    // Form states for password change
+    const [passwordForm, setPasswordForm] = React.useState({ current: '', new: '', confirm: '' });
 
     React.useEffect(() => {
         if (user) {
@@ -89,12 +95,26 @@ const Settings = () => {
         }
     };
 
-    const handleConnect = async () => {
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        if (passwordForm.new !== passwordForm.confirm) {
+            alert('New passwords do not match');
+            return;
+        }
+
+        setSaving(true);
         try {
-            const { url } = await calendarService.getAuthUrl();
-            window.location.href = url;
+            await api.put('/auth/change-password', {
+                currentPassword: passwordForm.current,
+                newPassword: passwordForm.new
+            });
+            alert('Password updated successfully!');
+            setActiveModal(null);
+            setPasswordForm({ current: '', new: '', confirm: '' });
         } catch (error) {
-            alert('Failed to get connection URL');
+            alert(error.response?.data?.msg || 'Failed to update password');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -300,9 +320,9 @@ const Settings = () => {
                     </div>
                 </div>
 
-                <SettingRow icon={Bell} title="Notifications" desc="Manage how you receive updates and reminders." />
-                <SettingRow icon={Shield} title="Privacy & Security" desc="Control your account security and data visibility." />
-                <SettingRow icon={SettingsIcon} title="General Preferences" desc="Adjust language, theme, and region settings." />
+                <SettingRow icon={Bell} title="Notifications" desc="Manage how you receive updates and reminders." onClick={() => setActiveModal('notifications')} />
+                <SettingRow icon={Shield} title="Privacy & Security" desc="Control your account security and data visibility." onClick={() => setActiveModal('privacy')} />
+                <SettingRow icon={SettingsIcon} title="General Preferences" desc="Adjust language, theme, and region settings." onClick={() => setActiveModal('preferences')} />
 
                 <button
                     onClick={logout}
@@ -320,14 +340,104 @@ const Settings = () => {
                     <LogOut size={18} /> Logout from Account
                 </button>
             </div>
+
+            {/* Notifications Modal */}
+            <AnimatePresence>
+                {activeModal === 'notifications' && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', margin: 'auto', position: 'relative' }}>
+                            <button onClick={() => setActiveModal(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={24} /></button>
+                            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Notification Settings</h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
+                                    <div>
+                                        <h4 style={{ fontWeight: 'bold' }}>Push Notifications</h4>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Receive alerts in your browser</p>
+                                    </div>
+                                    <input type="checkbox" checked={pushEnabled} onChange={(e) => setPushEnabled(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
+                                    <div>
+                                        <h4 style={{ fontWeight: 'bold' }}>Email Alerts</h4>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Receive important updates via email</p>
+                                    </div>
+                                    <input type="checkbox" checked={emailEnabledNotifications} onChange={(e) => setEmailEnabledNotifications(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+                                </div>
+                                <button className="btn-primary" onClick={handleSave} style={{ marginTop: '1rem', padding: '0.75rem' }}>Save Changes</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Privacy Modal */}
+            <AnimatePresence>
+                {activeModal === 'privacy' && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', margin: 'auto', position: 'relative' }}>
+                            <button onClick={() => setActiveModal(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={24} /></button>
+                            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Change Password</h2>
+                            <form onSubmit={handlePasswordChange}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <input required type="password" placeholder="Current Password" value={passwordForm.current} onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })} className="glass-input" style={{ width: '100%' }} />
+                                    <input required type="password" placeholder="New Password" value={passwordForm.new} onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })} className="glass-input" style={{ width: '100%' }} />
+                                    <input required type="password" placeholder="Confirm New Password" value={passwordForm.confirm} onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })} className="glass-input" style={{ width: '100%' }} />
+                                </div>
+                                <button type="submit" className="btn-primary" disabled={saving} style={{ width: '100%', padding: '0.75rem' }}>{saving ? 'Updating...' : 'Update Password'}</button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Preferences Modal */}
+            <AnimatePresence>
+                {activeModal === 'preferences' && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', margin: 'auto', position: 'relative' }}>
+                            <button onClick={() => setActiveModal(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={24} /></button>
+                            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>General Preferences</h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Interface Language</label>
+                                    <select className="glass-input" style={{ width: '100%' }}>
+                                        <option>English (US)</option>
+                                        <option>English (UK)</option>
+                                        <option>French</option>
+                                        <option>Spanish</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Theme Mode</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button className="btn-primary" style={{ flex: 1, padding: '0.5rem' }}>System</button>
+                                        <button className="btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Dark</button>
+                                        <button className="btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Light</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Timezone</label>
+                                    <select className="glass-input" style={{ width: '100%' }}>
+                                        <option>GMT+05:30 (Mumbai, Kolkata)</option>
+                                        <option>UTC (London)</option>
+                                        <option>GMT-05:00 (New York)</option>
+                                    </select>
+                                </div>
+                                <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '0.5rem', padding: '0.75rem' }}>Done</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
-const SettingRow = ({ icon: Icon, title, desc }) => (
+const SettingRow = ({ icon: Icon, title, desc, onClick }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        onClick={onClick}
         className="glass-card"
         style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
     >
