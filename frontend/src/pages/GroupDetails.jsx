@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles, MessageCircle, TrendingDown, Settings } from 'lucide-react';
+import { Plus, Sparkles, MessageCircle, TrendingDown, Settings, Edit } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import CreateTaskModal from '../components/CreateTaskModal';
 import AIPlanner from '../components/AIPlanner';
@@ -15,6 +15,7 @@ const GroupDetails = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
     const [activeTab, setActiveTab] = useState('board');
     const [currentUserId, setCurrentUserId] = useState(null);
 
@@ -43,6 +44,16 @@ const GroupDetails = () => {
     useEffect(() => {
         fetchDetails();
     }, [groupId]);
+
+    const updateGroupDetails = async (name, description) => {
+        try {
+            await api.put(`/groups/${groupId}`, { name: name || group.name, description: description || group.description });
+            fetchDetails();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update group details');
+        }
+    };
 
     const updateGithubRepo = async (githubRepo) => {
         try {
@@ -75,6 +86,22 @@ const GroupDetails = () => {
         }
     };
 
+    const handleDeleteTask = async (task) => {
+        if (!window.confirm('Are you sure you want to delete this task?')) return;
+        try {
+            await api.delete(`/tasks/${task._id}`);
+            setTasks(tasks.filter(t => t._id !== task._id));
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete task');
+        }
+    };
+
+    const handleEditTask = (task) => {
+        setEditingTask(task);
+        setIsTaskModalOpen(true);
+    };
+
     if (loading) return <div style={{ color: 'white', padding: '2rem' }}>Loading details...</div>;
     if (!group) return <div style={{ color: 'white', padding: '2rem' }}>Group not found.</div>;
 
@@ -89,7 +116,20 @@ const GroupDetails = () => {
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{group.name}</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                            <h1 className="gradient-text" style={{ fontSize: '2.5rem', margin: 0 }}>{group.name}</h1>
+                            {isLeader && (
+                                <button onClick={() => {
+                                    const newName = prompt('New Group Name:', group.name);
+                                    if (newName === null) return;
+                                    const newDesc = prompt('New Group Description:', group.description);
+                                    if (newDesc === null) return;
+                                    updateGroupDetails(newName, newDesc);
+                                }} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
+                                    <Edit size={18} />
+                                </button>
+                            )}
+                        </div>
                         <p style={{ color: 'var(--text-dim)' }}>{group.description}</p>
 
                         <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
@@ -259,6 +299,8 @@ const GroupDetails = () => {
                     onStatusChange={handleStatusChange}
                     isLeader={isLeader}
                     currentUserId={currentUserId}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
                 />
             ) : activeTab === 'analytics' ? (
                 <BurndownChart groupId={groupId} />
@@ -275,10 +317,12 @@ const GroupDetails = () => {
 
             <CreateTaskModal
                 isOpen={isTaskModalOpen}
-                onClose={() => setIsTaskModalOpen(false)}
+                onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); }}
                 groupId={groupId}
                 members={group.members}
                 onTaskCreated={fetchDetails}
+                isEditMode={!!editingTask}
+                initialData={editingTask}
             />
         </div>
     );

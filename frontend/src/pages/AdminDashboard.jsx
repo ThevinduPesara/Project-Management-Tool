@@ -66,6 +66,18 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleDeleteGroup = async () => {
+        if (!window.confirm('Are you absolutely sure you want to delete this group? All tasks, messages, and data will be permanently lost!')) return;
+        try {
+            await api.delete(`/groups/${groupId}`);
+            alert('Group deleted successfully');
+            navigate('/'); // Go back to main dashboard
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.msg || 'Failed to delete group');
+        }
+    };
+
     if (loading) return <div className="loading">Loading Admin Dashboard...</div>;
 
     return (
@@ -181,6 +193,30 @@ const AdminDashboard = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    <div className="glass-card" style={{ marginTop: '2rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                            <Shield color="#ef4444" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#ef4444' }}>Danger Zone</h2>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                            Once you delete a group, there is no going back. Please be certain.
+                        </p>
+                        <button
+                            onClick={handleDeleteGroup}
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid #ef4444',
+                                color: '#ef4444',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                            }}
+                        >
+                            Delete Group
+                        </button>
                     </div>
                 </section>
 

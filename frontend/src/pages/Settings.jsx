@@ -29,10 +29,17 @@ const Settings = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
+            let finalSkills = [...skills];
+            if (newSkill.trim() && !finalSkills.includes(newSkill.trim())) {
+                finalSkills.push(newSkill.trim());
+                setSkills(finalSkills);
+                setNewSkill('');
+            }
+            
             await api.put('/auth/profile', {
                 name,
                 githubUsername,
-                skills,
+                skills: finalSkills,
                 emailDigestEnabled: emailEnabled,
                 emailDigestFrequency: frequency
             });

@@ -218,9 +218,14 @@ io.on('connection', (socket) => {
 
 // Database Connection
 const MONGODB_URI = process.env.MONGODB_URI;
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log('MongoDB connection established'))
-    .catch(err => console.error('MongoDB connection error:', err));
+if (process.env.MOCK_DB === 'true') {
+    console.warn('⚠️  MOCK_DB IS ENABLED: Skipping real MongoDB connection.');
+    console.warn('⚠️  Data will not be persisted and authentication is mocked.');
+} else {
+    mongoose.connect(MONGODB_URI)
+        .then(() => console.log('MongoDB connection established'))
+        .catch(err => console.error('MongoDB connection error:', err));
+}
 
 // Basic Route
 app.get('/', (req, res) => {

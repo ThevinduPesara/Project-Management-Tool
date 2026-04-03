@@ -14,7 +14,7 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
     }, [task]);
 
     const handleSubmitForReview = async () => {
-        if (!note.trim()) return alert('Please provide a submission note.');
+        if (!note.trim()) return alert('add a submission note');
         setLoading(true);
         try {
             // First save the note (We might need an endpoint or use status update if it accepts notes)
@@ -36,6 +36,9 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
     };
 
     const handleApprove = async () => {
+        if (!task.submissionNote || task.submissionNote.trim() === '' || task.submissionNote === 'No note provided.') {
+            return alert('add a submission note');
+        }
         setLoading(true);
         try {
             await api.patch(`/tasks/${task._id}/status`, { status: 'Done' });
@@ -81,7 +84,7 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
                     </button>
 
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {isLeader ? (
+                        {isLeader && task?.status === 'Under Review' ? (
                             <><ClipboardCheck size={28} color="var(--primary-light)" /> Review Task</>
                         ) : (
                             <><Send size={24} color="var(--primary-light)" /> Submit Work</>
@@ -93,9 +96,9 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{task.description}</p>
 
                         <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                            {isLeader ? "Member's Submission Note" : "Your Submission Note"}
+                            {isLeader && task?.status === 'Under Review' ? "Member's Submission Note" : "Your Submission Note"}
                         </label>
-                        {isLeader ? (
+                        {isLeader && task?.status === 'Under Review' ? (
                             <div style={{
                                 padding: '1rem',
                                 background: 'rgba(255, 255, 255, 0.05)',
@@ -114,12 +117,13 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
                                 placeholder="Describe what you completed and how you met the requirements..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
+                                autoFocus
                             />
                         )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        {isLeader ? (
+                        {isLeader && task?.status === 'Under Review' ? (
                             <>
                                 <button
                                     className="btn-outline"

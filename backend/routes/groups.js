@@ -58,6 +58,12 @@ router.post('/join', auth, async (req, res) => {
 // Get user's groups
 router.get('/my-groups', auth, async (req, res) => {
     try {
+        if (process.env.MOCK_DB === 'true') {
+            return res.json([
+                { _id: 'g1', name: 'ITPM Project', description: 'Main project group', members: [{ user: { name: 'Test User' }, role: 'leader' }] },
+                { _id: 'g2', name: 'Frontend Team', description: 'UI/UX focus', members: [{ user: { name: 'Test User' }, role: 'member' }] }
+            ]);
+        }
         const groups = await Group.find({ 'members.user': req.user.id }).populate('members.user', 'name email');
         res.json(groups);
     } catch (err) {
@@ -125,6 +131,53 @@ router.put('/:groupId/timeline', auth, async (req, res) => {
         }
         console.error(err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// Update group details
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        if (group.leader.toString() !== req.user.id) {
+            return res.status(403).json({ msg: 'Only Group Leader can edit group' });
+        }
+
+        group.name = name || group.name;
+        group.description = description !== undefined ? description : group.description;
+
+        await group.save();
+        res.json(group);
+    } catch (err) {
+        console.error('Update group error:', err);
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+// Delete group
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        if (group.leader.toString() !== req.user.id) {
+            return res.status(403).json({ msg: 'Only Group Leader can delete group' });
+        }
+
+        await Group.findByIdAndDelete(req.params.id);
+        
+        // Cleanup cascading tasks and messages
+        const Task = require('../models/Task');
+        const Message = require('../models/Message');
+        await Task.deleteMany({ group: req.params.id });
+        await Message.deleteMany({ group: req.params.id });
+
+        res.json({ msg: 'Group deleted successfully' });
+    } catch (err) {
+        console.error('Delete group error:', err);
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

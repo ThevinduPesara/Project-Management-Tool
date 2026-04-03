@@ -8,6 +8,25 @@ const { getRepoCommitStats } = require('../utils/githubService');
 // Get global dashboard summary stats
 router.get('/summary', auth, async (req, res) => {
     try {
+        if (process.env.MOCK_DB === 'true') {
+            return res.json({
+                activeProjects: 2,
+                totalTasks: 5,
+                inProgressTasks: 3,
+                overdueTasks: 1,
+                recentTasks: [
+                    { _id: 't1', title: 'Implement Mock Mode', status: 'In Progress', group: { name: 'ITPM Project' }, deadline: new Date() },
+                    { _id: 't2', title: 'Verify Dashboard', status: 'In Progress', group: { name: 'Frontend Team' } }
+                ],
+                teamContributions: [
+                    { name: 'Test User', score: 80, completed: 4, total: 5, commits: 12 },
+                    { name: 'John Doe', score: 60, completed: 3, total: 5, commits: 8 }
+                ],
+                recentActivity: [
+                    { taskId: 't1', taskTitle: 'Implement Mock Mode', groupName: 'ITPM Project', to: 'In Progress', updatedAt: new Date(), updatedBy: { name: 'Test User' } }
+                ]
+            });
+        }
         const userId = req.user.id;
 
         // 1. Get all groups user is part of

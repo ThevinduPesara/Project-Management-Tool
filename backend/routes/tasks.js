@@ -85,7 +85,20 @@ router.patch('/:id/status', auth, async (req, res) => {
             if (!isLeader) {
                 return res.status(403).json({ msg: 'Only the Group Leader can approve tasks from review' });
             }
+
+            // Added validation: Require submissionNote to move from Under Review to Done
+            if (!task.submissionNote || task.submissionNote.trim() === '' || task.submissionNote === 'No note provided.') {
+                return res.status(400).json({ msg: 'A submission note is required before approving and finishing this task.' });
+            }
+
             task.reviewedBy = req.user.id;
+        }
+
+        // New Validation: Require submissionNote when moving to Under Review
+        if (status === 'Under Review') {
+            if (!req.body.submissionNote || req.body.submissionNote.trim() === '') {
+                return res.status(400).json({ msg: 'Please add a submission note explaining your work.' });
+            }
         }
 
         if (req.body.submissionNote) {
@@ -155,12 +168,78 @@ router.patch('/:id/assign', auth, async (req, res) => {
 // Get user's assigned tasks across all groups
 router.get('/my-tasks', auth, async (req, res) => {
     try {
+        if (process.env.MOCK_DB === 'true') {
+            return res.json([
+                { _id: 't1', title: 'Implement Mock Mode', status: 'In Progress', group: { name: 'ITPM Project' }, assignedTo: { name: 'Test User' } },
+                { _id: 't2', title: 'Verify Dashboard', status: 'In Progress', group: { name: 'Frontend Team' }, assignedTo: { name: 'Test User' } }
+            ]);
+        }
         const tasks = await Task.find({ assignedTo: req.user.id })
             .populate('group', 'name')
             .populate('assignedTo', 'name email');
         res.json(tasks);
     } catch (err) {
         res.status(500).send('Server Error');
+    }
+});
+
+// Update full task details
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const { title, description, deadline, assignedTo, type } = req.body;
+        const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ msg: 'Task not found' });
+
+        const group = await Group.findById(task.group);
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        const member = group.members.find(m => m.user.toString() === req.user.id);
+        if (!member || !['leader', 'task-manager'].includes(member.role)) {
+            return res.status(403).json({ msg: 'Only Leaders and Task Managers can edit tasks' });
+        }
+
+        task.title = title || task.title;
+        task.description = description !== undefined ? description : task.description;
+        task.deadline = deadline !== undefined ? deadline : task.deadline;
+        task.assignedTo = assignedTo !== undefined ? assignedTo : task.assignedTo;
+        task.type = type || task.type;
+
+        await task.save();
+
+        const populatedTask = await Task.findById(task._id)
+            .populate('assignedTo', 'name email')
+            .populate('reviewedBy', 'name');
+
+        res.json(populatedTask);
+    } catch (err) {
+        console.error('Update task error:', err);
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+// Delete task
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ msg: 'Task not found' });
+
+        const group = await Group.findById(task.group);
+        if (!group) return res.status(404).json({ msg: 'Group not found' });
+
+        const member = group.members.find(m => m.user.toString() === req.user.id);
+        if (!member || !['leader', 'task-manager'].includes(member.role)) {
+            return res.status(403).json({ msg: 'Only Leaders and Task Managers can delete tasks' });
+        }
+
+        await Task.findByIdAndDelete(req.params.id);
+
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity(req.user.id, task.group, 'task_deleted', { taskTitle: task.title });
+
+        res.json({ msg: 'Task deleted' });
+    } catch (err) {
+        console.error('Delete task error:', err);
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import LandingPage from './pages/LandingPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AcceptInvitation from './pages/AcceptInvitation';
+import ResourceShare from './pages/ResourceShare';
 
 const App = () => {
     const { user, loading } = useContext(AuthContext);
@@ -34,6 +35,7 @@ const App = () => {
                 <Route path="/dashboard" element={user ? <MainLayout><Dashboard /></MainLayout> : <Navigate to="/login" />} />
                 <Route path="/projects" element={user ? <MainLayout><Projects /></MainLayout> : <Navigate to="/login" />} />
                 <Route path="/my-tasks" element={user ? <MainLayout><MyTasks /></MainLayout> : <Navigate to="/login" />} />
+                <Route path="/resource-share" element={user ? <MainLayout><ResourceShare /></MainLayout> : <Navigate to="/login" />} />
                 <Route path="/team" element={user ? <MainLayout><Team /></MainLayout> : <Navigate to="/login" />} />
                 <Route path="/settings" element={user ? <MainLayout><Settings /></MainLayout> : <Navigate to="/login" />} />
                 <Route path="/group/:groupId" element={user ? <MainLayout><GroupDetails /></MainLayout> : <Navigate to="/login" />} />

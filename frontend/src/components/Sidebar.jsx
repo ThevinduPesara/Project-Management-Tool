@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import {
-    Users, Layout, Settings, Briefcase, ClipboardList
+    Users, Layout, Settings, Briefcase, ClipboardList, Folder
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -36,6 +36,7 @@ const Sidebar = () => {
                 <SidebarItem to="/dashboard" icon={Layout} label="Dashboard" />
                 <SidebarItem to="/projects" icon={Briefcase} label="Projects" />
                 <SidebarItem to="/my-tasks" icon={ClipboardList} label="My Tasks" />
+                <SidebarItem to="/resource-share" icon={Folder} label="Resource Share" />
                 <SidebarItem to="/team" icon={Users} label="Team" />
                 <SidebarItem to="/settings" icon={Settings} label="Settings" />
             </nav>

@@ -1,6 +1,8 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Message = require('../models/Message');
+const Group = require('../models/Group');
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads');
@@ -83,5 +85,41 @@ exports.uploadFile = async (req, res) => {
     } catch (error) {
         console.error('Error uploading file:', error);
         res.status(500).json({ error: 'Failed to upload file' });
+    }
+};
+
+exports.getResources = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // 1. Find all groups user is a member of
+        const groups = await Group.find({ 'members.user': userId }).select('_id name');
+        const groupIds = groups.map(g => g._id);
+
+        // 2. Find messages in those groups that have attachments
+        const messages = await Message.find({
+            group: { $in: groupIds },
+            'attachments.0': { $exists: true }
+        })
+        .sort({ createdAt: -1 })
+        .populate('sender', 'name')
+        .populate('group', 'name');
+
+        // 3. Flatten attachments and include group/sender info
+        const resources = messages.reduce((acc, msg) => {
+            const msgResources = msg.attachments.map(att => ({
+                ...att.toObject(),
+                sender: msg.sender,
+                group: msg.group,
+                messageId: msg._id,
+                createdAt: msg.createdAt
+            }));
+            return [...acc, ...msgResources];
+        }, []);
+
+        res.json(resources);
+    } catch (error) {
+        console.error('Error fetching resources:', error);
+        res.status(500).json({ error: 'Failed to fetch resources' });
     }
 };

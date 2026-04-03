@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, User, Bug, FileText, CheckSquare, CheckCircle } from 'lucide-react';
+import { Clock, User, Bug, FileText, CheckSquare, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import {
     DndContext,
     rectIntersection,
@@ -15,7 +15,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Sparkles } from 'lucide-react';
 import QAModal from './QAModal';
 
-const DraggableTask = ({ task, isLeader }) => {
+const DraggableTask = ({ task, isLeader, onEdit, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: task._id,
         data: { task }
@@ -45,9 +45,21 @@ const DraggableTask = ({ task, isLeader }) => {
             animate={{ opacity: 1, y: 0 }}
             className="kanban-card"
         >
-            <div className="card-type-tag">
-                {getTypeIcon(task.type)}
-                <span>{task.type || 'Task'}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div className="card-type-tag" style={{ margin: 0 }}>
+                    {getTypeIcon(task.type)}
+                    <span>{task.type || 'Task'}</span>
+                </div>
+                {isLeader && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }} onPointerDown={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(task); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-light)' }}>
+                            <Edit size={14} />
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(task); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
+                )}
             </div>
             <h4 className="card-title">{task.title}</h4>
             <p className="card-desc">{task.description}</p>
@@ -119,7 +131,7 @@ const DraggableTask = ({ task, isLeader }) => {
     );
 };
 
-const DroppableColumn = ({ id, title, tasks, color, isLeader }) => {
+const DroppableColumn = ({ id, title, tasks, color, isLeader, onEdit, onDelete }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: id,
         data: { status: id }
@@ -143,7 +155,7 @@ const DroppableColumn = ({ id, title, tasks, color, isLeader }) => {
 
             <div className="column-content">
                 {tasks.map(task => (
-                    <DraggableTask key={task._id} task={task} isLeader={isLeader} />
+                    <DraggableTask key={task._id} task={task} isLeader={isLeader} onEdit={onEdit} onDelete={onDelete} />
                 ))}
                 {tasks.length === 0 && (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', border: '2px dashed var(--border)', borderRadius: '1rem', marginTop: '1rem' }}>
@@ -156,7 +168,7 @@ const DroppableColumn = ({ id, title, tasks, color, isLeader }) => {
 };
 
 
-const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId }) => {
+const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId, onEditTask, onDeleteTask }) => {
     const [activeId, setActiveId] = useState(null);
     const [qaTask, setQaTask] = useState(null);
 
@@ -205,9 +217,11 @@ const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId }) => {
 
         // Only update if status actually changed
         if (task.status !== newStatus) {
-            onStatusChange(taskId, newStatus);
             if (newStatus === 'Under Review') {
+                // DON'T call onStatusChange yet. Open the modal first.
                 setQaTask(task);
+            } else {
+                onStatusChange(taskId, newStatus);
             }
         }
     };
@@ -233,6 +247,8 @@ const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId }) => {
                         tasks={tasks.filter(t => t.status === col.status)}
                         color={col.color}
                         isLeader={isLeader}
+                        onEdit={onEditTask}
+                        onDelete={onDeleteTask}
                     />
                 ))}
             </div>
@@ -240,7 +256,7 @@ const KanbanBoard = ({ tasks, onStatusChange, isLeader, currentUserId }) => {
             <DragOverlay dropAnimation={null}>
                 {activeId ? (
                     <div style={{ transform: 'rotate(2deg)', opacity: 0.8, pointerEvents: 'none' }}>
-                        <DraggableTask task={tasks.find(t => t._id === activeId)} isLeader={isLeader} />
+                        <DraggableTask task={tasks.find(t => t._id === activeId)} isLeader={isLeader} onEdit={() => {}} onDelete={() => {}} />
                     </div>
                 ) : null}
             </DragOverlay>

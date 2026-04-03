@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { motion } from 'framer-motion';
-import { ClipboardList, Clock, Briefcase, CheckCircle, AlertCircle } from 'lucide-react';
+import { ClipboardList, Clock, Briefcase, CheckCircle, AlertCircle, Search } from 'lucide-react';
 
 const MyTasks = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -31,15 +32,42 @@ const MyTasks = () => {
 
     if (loading) return <div style={{ color: 'white' }}>Loading tasks...</div>;
 
+    const filteredTasks = tasks.filter(task => 
+        task.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.group?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.status?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
             <header style={{ marginBottom: '3rem' }}>
                 <h1 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>My Tasks</h1>
                 <p style={{ color: 'var(--text-muted)' }}>A centralized view of all tasks assigned to you across all your projects.</p>
+                
+                <div style={{ position: 'relative', marginTop: '1.5rem', maxWidth: '400px' }}>
+                    <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input
+                        type="text"
+                        placeholder="Search tasks by title, project, or status..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem 0.75rem 3rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color, #e2e8f0)',
+                            background: 'var(--bg-main, white)',
+                            color: 'var(--text-main, #1e293b)',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                        }}
+                    />
+                </div>
             </header>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {tasks.map((task, index) => {
+                {filteredTasks.map((task, index) => {
                     const style = getStatusStyle(task.status);
                     return (
                         <motion.div
@@ -102,11 +130,17 @@ const MyTasks = () => {
                     );
                 })}
 
-                {tasks.length === 0 && (
+                {filteredTasks.length === 0 && (
                     <div className="glass-card" style={{ textAlign: 'center', padding: '5rem' }}>
                         <ClipboardList size={48} color="var(--text-muted)" style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>No tasks assigned</h3>
-                        <p style={{ color: 'var(--text-muted)' }}>Relax! You don't have any tasks assigned to you at the moment.</p>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+                            {tasks.length === 0 ? "No tasks assigned" : "No tasks found"}
+                        </h3>
+                        <p style={{ color: 'var(--text-muted)' }}>
+                            {tasks.length === 0 
+                                ? "Relax! You don't have any tasks assigned to you at the moment."
+                                : "No tasks match your search query."}
+                        </p>
                     </div>
                 )}
             </div>

@@ -32,6 +32,17 @@ router.post('/login', async (req, res) => {
         const { email, password } = req.body;
         console.log(`[LOGIN ATTEMPT] Email: ${email}`);
 
+        // Mock Login Logic
+        if (process.env.MOCK_DB === 'true') {
+            console.log(`[MOCK LOGIN] Bypass authentication for: ${email}`);
+            const mockUser = { id: 'mock-user-123', name: 'Test User', email: email, role: 'leader' };
+            const payload = { user: { id: mockUser.id } };
+            return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
+                if (err) return res.status(500).json({ msg: 'Mock Token failed' });
+                res.json({ token, user: mockUser });
+            });
+        }
+
         let user = await User.findOne({ email });
         if (!user) {
             console.log(`[LOGIN FAILED] User not found: ${email}`);
@@ -62,6 +73,9 @@ router.post('/login', async (req, res) => {
 // Get user profile
 router.get('/me', auth, async (req, res) => {
     try {
+        if (process.env.MOCK_DB === 'true' && req.user.id === 'mock-user-123') {
+            return res.json({ id: 'mock-user-123', name: 'Test User', email: 'test@example.com', role: 'leader', skills: ['React', 'Node.js'] });
+        }
         const user = await User.findById(req.user.id).select('-password');
         if (!user) return res.status(404).json({ msg: 'User not found' });
         res.json(user);
@@ -89,7 +103,10 @@ router.put('/profile', auth, async (req, res) => {
         if (githubUsername !== undefined) user.githubUsername = githubUsername;
         if (emailDigestEnabled !== undefined) user.emailDigestEnabled = emailDigestEnabled;
         if (emailDigestFrequency) user.emailDigestFrequency = emailDigestFrequency;
-        if (skills && Array.isArray(skills)) user.skills = skills;
+        if (skills && Array.isArray(skills)) {
+            user.skills = skills;
+            user.markModified('skills');
+        }
 
         await user.save();
         console.log('Profile updated successfully for:', user.email);

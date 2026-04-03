@@ -4,16 +4,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, User, AlignLeft, BarChart, Sparkles } from 'lucide-react';
 import aiService from '../api/aiService';
 
-const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) => {
+const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated, isEditMode = false, initialData = null }) => {
     const [taskData, setTaskData] = useState({
-        title: '',
-        description: '',
-        deadline: '',
-        assignedTo: '',
-        type: 'Task'
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        deadline: initialData?.deadline ? initialData.deadline.split('T')[0] : '',
+        assignedTo: initialData?.assignedTo?._id || initialData?.assignedTo || '',
+        type: initialData?.type || 'Task'
     });
     const [loading, setLoading] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
+
+    React.useEffect(() => {
+        if (isOpen && initialData) {
+            setTaskData({
+                title: initialData.title || '',
+                description: initialData.description || '',
+                deadline: initialData.deadline ? initialData.deadline.split('T')[0] : '',
+                assignedTo: initialData.assignedTo?._id || initialData.assignedTo || '',
+                type: initialData.type || 'Task'
+            });
+        } else if (isOpen && !initialData) {
+            setTaskData({ title: '', description: '', deadline: '', assignedTo: '', type: 'Task' });
+        }
+    }, [isOpen, initialData]);
 
     const handleAiEstimate = async () => {
         if (!taskData.title) return alert('Please enter a title first');
@@ -42,13 +56,17 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/tasks', { ...taskData, groupId });
+            if (isEditMode && initialData) {
+                await api.put(`/tasks/${initialData._id}`, taskData);
+            } else {
+                await api.post('/tasks', { ...taskData, groupId });
+            }
             onTaskCreated();
             setTaskData({ title: '', description: '', deadline: '', assignedTo: '', type: 'Task' });
             onClose();
         } catch (err) {
             console.error(err);
-            alert('Error creating task');
+            alert(isEditMode ? 'Error updating task' : 'Error creating task');
         } finally {
             setLoading(false);
         }
@@ -80,8 +98,8 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
                         <X size={20} />
                     </button>
 
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>New Work Item</h2>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Define a new piece of work for your team.</p>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{isEditMode ? 'Edit Work Item' : 'New Work Item'}</h2>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>{isEditMode ? 'Update the details for this work item.' : 'Define a new piece of work for your team.'}</p>
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <div>
@@ -199,7 +217,7 @@ const CreateTaskModal = ({ isOpen, onClose, groupId, members, onTaskCreated }) =
                                 fontSize: '1rem'
                             }}
                         >
-                            {loading ? 'Creating...' : <>Create Work Item</>}
+                            {loading ? (isEditMode ? 'Updating...' : 'Creating...') : <>{isEditMode ? 'Save Changes' : 'Create Work Item'}</>}
                         </button>
                     </form>
                 </motion.div>
