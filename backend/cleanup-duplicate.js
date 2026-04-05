@@ -13,7 +13,7 @@ const cleanup = async () => {
         if (deleted) {
             console.log(`Successfully deleted empty duplicate project: ${deleted.name} (${deleted._id})`);
         } else {
-            
+            console.log('Project not found or already deleted.');
         }
 
         process.exit(0);
