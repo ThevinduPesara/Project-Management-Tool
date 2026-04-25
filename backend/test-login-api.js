@@ -15,7 +15,7 @@ async function testLogin() {
         const data = await response.json();
         console.log(`Login response status ${response.status}:`, data);
     } catch (err) {
-       
+        console.error('Network error or invalid JSON:', err.message);
     }
 }
 
