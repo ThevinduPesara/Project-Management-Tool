@@ -144,9 +144,7 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
                                 <button
                                     className="btn-primary"
                                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                                    onClick={handleSubmitForReview}
-                                    disabled={loading}
-                                >
+                                    
                                     <Send size={18} /> Submit for Review
                                 </button>
                             </>
