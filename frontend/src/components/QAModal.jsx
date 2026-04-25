@@ -152,7 +152,7 @@ const QAModal = ({ isOpen, onClose, task, onVerified, isLeader }) => {
                             </>
                         )}
                     </div>
-                </motion.div>
+                
             </div>
         </AnimatePresence>
     );
