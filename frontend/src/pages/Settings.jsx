@@ -327,7 +327,10 @@ const SettingRow = ({ icon: Icon, title, desc }) => (
         <div style={{ padding: '0.75rem', background: 'var(--bg-main)', borderRadius: '12px', color: 'var(--primary-light)' }}>
             <Icon size={20} />
         </div>
-       
+        <div>
+            <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{title}</h4>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{desc}</p>
+        </div>
     </motion.div>
 );
 
