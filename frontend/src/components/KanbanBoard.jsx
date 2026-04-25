@@ -83,10 +83,7 @@ const DraggableTask = ({ task, isLeader }) => {
                             cursor: isLeader ? 'pointer' : 'default'
                         }}
                         onClick={(e) => {
-                            e.stopPropagation();
-                            if (isLeader) {
-                                window.dispatchEvent(new CustomEvent('open-qa-modal', { detail: task }));
-                            }
+                          
                         }}
                     >
                         {isLeader ? (
