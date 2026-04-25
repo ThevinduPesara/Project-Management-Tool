@@ -79,7 +79,7 @@ const Register = () => {
                     <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.875rem' }}>Create Account</button>
                 </form>
                 <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    Already have an account? <Link to="/login" style={{ color: 'var(--primary-light)', textDecoration: 'none', fontWeight: '600' }}>Login</Link>
+                   
                 </p>
             </motion.div>
         </div>
